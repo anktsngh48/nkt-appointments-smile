@@ -6,51 +6,97 @@
 
 <style>
 body {
-  font-family: Arial;
+  font-family: 'Segoe UI', sans-serif;
   margin: 0;
-  padding: 20px;
+  background: #f4f6f9;
 }
 
 .header {
-  background-color: #4CAF50;
+  background-color: #007bff;
   color: white;
-  padding: 15px;
+  padding: 18px;
   text-align: center;
   font-size: 22px;
+  font-weight: 600;
   cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
 }
 
 .container {
-  margin-top: 20px;
+  padding: 20px;
+  max-width: 500px;
+  margin: auto;
+}
+
+.card {
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+}
+
+label {
+  font-size: 14px;
+  font-weight: 600;
+  margin-top: 15px;
+  display: block;
 }
 
 select, input {
   width: 100%;
   padding: 12px;
-  margin-top: 10px;
+  margin-top: 6px;
   font-size: 16px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  box-sizing: border-box;
+}
+
+select:focus, input:focus {
+  outline: none;
+  border-color: #007bff;
 }
 
 button {
-  background-color: #4CAF50;
-  color: white;
-  padding: 12px;
+  padding: 14px;
   width: 100%;
   border: none;
-  margin-top: 15px;
+  margin-top: 20px;
   font-size: 16px;
+  border-radius: 8px;
+  transition: 0.3s;
+}
+
+button:disabled {
+  background-color: #cccccc;
+  color: white;
+}
+
+button.enabled {
+  background-color: #28a745;
+  color: white;
 }
 
 img {
   width: 100%;
   aspect-ratio: 3 / 4;
   object-fit: cover;
+  border-radius: 10px;
   margin-top: 10px;
 }
 
 .address {
-  margin-top: 10px;
+  margin-top: 6px;
+  font-size: 14px;
+  color: #555;
+}
+
+.token {
+  text-align: center;
+  margin-top: 20px;
+  font-size: 18px;
   font-weight: bold;
+  color: #007bff;
 }
 </style>
 </head>
@@ -62,26 +108,30 @@ SMILE Dental Clinic
 </div>
 
 <div class="container">
+<div class="card">
 
 <div id="doctorContainer"></div>
 <img id="doctorImage" style="display:none;"/>
 
+<label>Choose Clinic</label>
 <select id="clinicSelect"></select>
 <div id="clinicAddress" class="address"></div>
 
-<input type="text" id="userName" placeholder="Enter your name">
+<label>Enter Your Name</label>
+<input type="text" id="userName" placeholder="Your name">
 
+<label>Select Date</label>
 <div id="dateContainer"></div>
 
-<button onclick="submitForm()">Book Appointment</button>
+<button id="bookBtn" disabled>Book Appointment</button>
 
-<div id="tokenDisplay"></div>
+<div id="tokenDisplay" class="token"></div>
 
+</div>
 </div>
 
 <script>
-const scriptURL = "YOUR_GOOGLE_SCRIPT_URL_HERE";
-
+const scriptURL = "https://script.google.com/macros/s/AKfycbzBvHQb57X36iLzh2eFbvl890eU-pmzMyzD0HkOWN4Ruz4egavClFATfR79e3wD5EL5/exec";
 let settingsData = [];
 
 fetch(scriptURL + "?action=getSettings")
@@ -101,16 +151,17 @@ function initialize() {
   // Doctors
   if (doctors.length === 1) {
     document.getElementById("doctorContainer").innerHTML =
-      "<p><b>" + doctors[0][1] + "</b></p>";
+      "<label>Doctor</label><p><b>" + doctors[0][1] + "</b></p>";
     showDoctorImage(doctors[0][2]);
   } else {
-    let select = "<select id='doctorSelect' onchange='doctorChanged()'>";
+    let select = "<label>Select Doctor</label><select id='doctorSelect'>";
     doctors.forEach(d => {
       select += "<option value='" + d[1] + "' data-img='" + d[2] + "'>" + d[1] + "</option>";
     });
     select += "</select>";
     document.getElementById("doctorContainer").innerHTML = select;
     showDoctorImage(doctors[0][2]);
+    document.getElementById("doctorSelect").addEventListener("change", doctorChanged);
   }
 
   // Clinics
@@ -136,13 +187,37 @@ function initialize() {
 
     document.getElementById("dateContainer").innerHTML =
       "<select id='dateSelect'>" +
-      "<option value='" + today.toDateString() + "'>Today (" + today.toDateString() + ")</option>" +
-      "<option value='" + tomorrow.toDateString() + "'>Tomorrow (" + tomorrow.toDateString() + ")</option>" +
-      "<option value='" + dayAfter.toDateString() + "'>Day After Tomorrow (" + dayAfter.toDateString() + ")</option>" +
+      "<option value='" + today.toDateString() + "'>Today</option>" +
+      "<option value='" + tomorrow.toDateString() + "'>Tomorrow</option>" +
+      "<option value='" + dayAfter.toDateString() + "'>Day After Tomorrow</option>" +
       "</select>";
   } else {
     document.getElementById("dateContainer").innerHTML =
       "<input type='date' id='dateSelect'>";
+  }
+
+  document.getElementById("bookBtn").addEventListener("click", submitForm);
+  document.querySelectorAll("input, select").forEach(el => {
+    el.addEventListener("input", validateForm);
+    el.addEventListener("change", validateForm);
+  });
+}
+
+function validateForm() {
+  const name = document.getElementById("userName").value.trim();
+  const date = document.getElementById("dateSelect").value;
+  const clinic = document.getElementById("clinicSelect").value;
+  const doctor = document.getElementById("doctorSelect") ? 
+    document.getElementById("doctorSelect").value : true;
+
+  const btn = document.getElementById("bookBtn");
+
+  if (name && date && clinic && doctor) {
+    btn.disabled = false;
+    btn.classList.add("enabled");
+  } else {
+    btn.disabled = true;
+    btn.classList.remove("enabled");
   }
 }
 
@@ -167,10 +242,11 @@ function updateAddress() {
 }
 
 function submitForm() {
+
   const name = document.getElementById("userName").value;
   const doctor = document.getElementById("doctorSelect") ? 
     document.getElementById("doctorSelect").value :
-    document.getElementById("doctorContainer").innerText;
+    document.querySelector("#doctorContainer p").innerText;
 
   const clinicSelect = document.getElementById("clinicSelect");
   const clinic = clinicSelect.value;
@@ -184,8 +260,20 @@ function submitForm() {
         "&date=" + date)
   .then(res => res.text())
   .then(token => {
+
     document.getElementById("tokenDisplay").innerHTML =
-      "<h3>Your Token Number: " + token + "</h3>";
+      "Your Token Number: " + token;
+
+    // WhatsApp Confirmation
+    const message = 
+      "Hello " + name + 
+      "%0AAppointment Confirmed at SMILE Dental Clinic" +
+      "%0ADoctor: " + doctor +
+      "%0AClinic: " + clinic +
+      "%0ADate: " + date +
+      "%0AToken: " + token;
+
+    window.open("https://wa.me/?text=" + message, "_blank");
   });
 }
 
