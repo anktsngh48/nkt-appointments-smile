@@ -163,9 +163,8 @@ function initialize() {
     select += "</select>";
     document.getElementById("doctorContainer").innerHTML = select;
 
-    // FIRST OPTION SELECTED BY DEFAULT
     const doctorSelect = document.getElementById("doctorSelect");
-    doctorSelect.selectedIndex = 0;
+    doctorSelect.selectedIndex = 0; // first selected
     showDoctorImage(doctors[0][2]);
 
     doctorSelect.addEventListener("change", doctorChanged);
@@ -181,7 +180,7 @@ function initialize() {
     clinicSelect.appendChild(option);
   });
 
-  clinicSelect.selectedIndex = 0; // DEFAULT FIRST
+  clinicSelect.selectedIndex = 0; // first selected
   updateAddress();
   clinicSelect.addEventListener("change", updateAddress);
 
@@ -214,22 +213,20 @@ function initialize() {
   });
 }
 
-function convertDriveLink(url) {
-  if (!url) return "";
-  if (url.includes("drive.google.com")) {
-    const idMatch = url.match(/[-\w]{25,}/);
-    if (idMatch) {
-      return "https://drive.google.com/uc?export=view&id=" + idMatch[0];
-    }
-  }
-  return url;
-}
-
 function showDoctorImage(url) {
-  if (!url) return;
   const img = document.getElementById("doctorImage");
-  img.src = convertDriveLink(url);
+
+  if (!url || url.trim() === "") {
+    img.style.display = "none";
+    return;
+  }
+
+  img.src = url;
   img.style.display = "block";
+
+  img.onerror = function() {
+    img.style.display = "none"; // hide if broken URL
+  };
 }
 
 function doctorChanged() {
