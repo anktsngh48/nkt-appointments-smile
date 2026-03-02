@@ -19,7 +19,6 @@ body {
   font-size: 22px;
   font-weight: 600;
   cursor: pointer;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
 }
 
 .container {
@@ -32,7 +31,7 @@ body {
   background: white;
   padding: 20px;
   border-radius: 12px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
 }
 
 label {
@@ -113,12 +112,15 @@ SMILE Dental Clinic
 <div id="doctorContainer"></div>
 <img id="doctorImage" style="display:none;"/>
 
-<label>Choose Clinic</label>
+<label>Select Clinic</label>
 <select id="clinicSelect"></select>
 <div id="clinicAddress" class="address"></div>
 
 <label>Enter Your Name</label>
 <input type="text" id="userName" placeholder="Your name">
+
+<label>Enter Phone Number</label>
+<input type="tel" id="userPhone" placeholder="Your phone number">
 
 <label>Select Date</label>
 <div id="dateContainer"></div>
@@ -131,7 +133,7 @@ SMILE Dental Clinic
 </div>
 
 <script>
-const scriptURL = "https://script.google.com/macros/s/AKfycbzBvHQb57X36iLzh2eFbvl890eU-pmzMyzD0HkOWN4Ruz4egavClFATfR79e3wD5EL5/exec";
+const scriptURL = "https://script.google.com/macros/s/AKfycbzUD4H6T1xvgwsM9rFXCjDajJn1zjKAwf1cvwuGl-8UdUjcFBL7mjT2ZK_UsBdICIAEWA/exec";
 let settingsData = [];
 
 fetch(scriptURL + "?action=getSettings")
@@ -205,14 +207,13 @@ function initialize() {
 
 function validateForm() {
   const name = document.getElementById("userName").value.trim();
+  const phone = document.getElementById("userPhone").value.trim();
   const date = document.getElementById("dateSelect").value;
   const clinic = document.getElementById("clinicSelect").value;
-  const doctor = document.getElementById("doctorSelect") ? 
-    document.getElementById("doctorSelect").value : true;
 
   const btn = document.getElementById("bookBtn");
 
-  if (name && date && clinic && doctor) {
+  if (name && phone && date && clinic) {
     btn.disabled = false;
     btn.classList.add("enabled");
   } else {
@@ -244,6 +245,8 @@ function updateAddress() {
 function submitForm() {
 
   const name = document.getElementById("userName").value;
+  const phone = document.getElementById("userPhone").value;
+
   const doctor = document.getElementById("doctorSelect") ? 
     document.getElementById("doctorSelect").value :
     document.querySelector("#doctorContainer p").innerText;
@@ -253,27 +256,17 @@ function submitForm() {
   const address = clinicSelect.options[clinicSelect.selectedIndex].getAttribute("data-address");
   const date = document.getElementById("dateSelect").value;
 
-  fetch(scriptURL + "?action=submitAppointment&name=" + name +
-        "&doctor=" + doctor +
-        "&clinic=" + clinic +
-        "&address=" + address +
-        "&date=" + date)
+  fetch(scriptURL + "?action=submitAppointment" +
+        "&name=" + encodeURIComponent(name) +
+        "&phone=" + encodeURIComponent(phone) +
+        "&doctor=" + encodeURIComponent(doctor) +
+        "&clinic=" + encodeURIComponent(clinic) +
+        "&address=" + encodeURIComponent(address) +
+        "&date=" + encodeURIComponent(date))
   .then(res => res.text())
   .then(token => {
-
     document.getElementById("tokenDisplay").innerHTML =
       "Your Token Number: " + token;
-
-    // WhatsApp Confirmation
-    const message = 
-      "Hello " + name + 
-      "%0AAppointment Confirmed at SMILE Dental Clinic" +
-      "%0ADoctor: " + doctor +
-      "%0AClinic: " + clinic +
-      "%0ADate: " + date +
-      "%0AToken: " + token;
-
-    window.open("https://wa.me/?text=" + message, "_blank");
   });
 }
 
