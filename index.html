@@ -38,7 +38,7 @@ body {
 .doctorRow {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start; /* image aligns to top */
+  align-items: flex-start; /* top alignment of left content */
   gap: 15px;
 }
 
@@ -47,9 +47,10 @@ body {
 }
 
 .imageContainer {
-  width: 80px;    /* narrow */
-  height: 142px;  /* 9:16 portrait */
+  width: 80px;     /* 3:4 ratio */
+  height: 106px;   /* 80*4/3 = 106 */
   flex-shrink: 0;
+  margin-top: 26px; /* aligns image with the top of Doctor label */
 }
 
 .imageContainer img {
@@ -137,7 +138,8 @@ th, td {
 @media(max-width:480px){
   .imageContainer {
     width: 60px;
-    height: 106px; /* maintain 9:16 */
+    height: 80px; /* maintain 3:4 */
+    margin-top: 20px;
   }
 
   .dropdownRow {
