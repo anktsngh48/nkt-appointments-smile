@@ -5,6 +5,34 @@
 <title>SMILE Dental Clinic</title>
 
 <style>
+/* ===== PRELOADER ===== */
+#preloader {
+  position: fixed;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+  background:#f4f6f9;
+  z-index:9999;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  text-align:center;
+  padding:20px;
+}
+
+#preloader p {
+  font-size: 18px;
+  font-weight: 600;
+  color:#007bff;
+  line-height:1.5;
+}
+
+body.loading {
+  overflow: hidden;
+}
+
+/* ===== BODY & CONTAINER ===== */
 body {
   font-family: 'Segoe UI', sans-serif;
   margin: 0;
@@ -38,7 +66,7 @@ body {
 .doctorRow {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start; /* top alignment of left content */
+  align-items: flex-start;
   gap: 15px;
 }
 
@@ -47,10 +75,10 @@ body {
 }
 
 .imageContainer {
-  width: 80px;     /* 3:4 ratio */
-  height: 106px;   /* 80*4/3 = 106 */
+  width: 80px;    /* 3:4 */
+  height: 106px;
   flex-shrink: 0;
-  margin-top: 26px; /* aligns image with the top of Doctor label */
+  margin-top: 26px; /* aligns with Doctor label */
 }
 
 .imageContainer img {
@@ -60,8 +88,6 @@ body {
   border-radius: 6px;
   display: none;
 }
-
-/* ============================== */
 
 label {
   font-weight: 600;
@@ -138,7 +164,7 @@ th, td {
 @media(max-width:480px){
   .imageContainer {
     width: 60px;
-    height: 80px; /* maintain 3:4 */
+    height: 80px;
     margin-top: 20px;
   }
 
@@ -153,57 +179,80 @@ th, td {
 </style>
 </head>
 
-<body>
+<body class="loading">
 
-<div class="header" onclick="adminLogin()">
-SMILE Dental Clinic
+<!-- ===== PRELOADER ===== -->
+<div id="preloader">
+  <p>नित्यमध्मान तां तांस्तु व्याधिभिश्च विवर्जितः।<br>रसैश्च दन्तमूलानां रूक्षैराचाम्य विक्रियाम्॥</p>
 </div>
 
-<div class="container">
+<!-- ===== MAIN CONTENT ===== -->
+<div id="mainContent" style="display:none;">
+  <div class="header" onclick="adminLogin()">
+    SMILE Dental Clinic
+  </div>
 
-<div id="mainCard" class="card">
+  <div class="container">
 
-<div class="doctorRow">
-  <div class="doctorInfo">
-    <div id="doctorContainer"></div>
+    <div id="mainCard" class="card">
 
-    <div class="dropdownRow">
-      <select id="doctorSelect" class="doctorSelect"></select>
-      <select id="clinicSelect" class="clinicSelect"></select>
+      <div class="doctorRow">
+        <div class="doctorInfo">
+          <div id="doctorContainer"></div>
+
+          <div class="dropdownRow">
+            <select id="doctorSelect" class="doctorSelect"></select>
+            <select id="clinicSelect" class="clinicSelect"></select>
+          </div>
+          <div id="clinicAddress"></div>
+        </div>
+
+        <div class="imageContainer">
+          <img id="doctorImage">
+        </div>
+      </div>
+
+      <label>Name</label>
+      <input type="text" id="userName">
+
+      <label>Phone</label>
+      <input type="tel" id="userPhone">
+
+      <label>Date</label>
+      <div id="dateContainer"></div>
+
+      <div class="tokenInfo" id="tokenAvailable"></div>
+
+      <button id="bookBtn" disabled>Book Appointment</button>
+
+      <div id="result"></div>
+
     </div>
-    <div id="clinicAddress"></div>
+
+    <div id="adminPanel" class="card" style="display:none;">
+      <h3>Admin Dashboard</h3>
+      <div id="appointmentTable"></div>
+    </div>
+
   </div>
-
-  <div class="imageContainer">
-    <img id="doctorImage">
-  </div>
-</div>
-
-<label>Name</label>
-<input type="text" id="userName">
-
-<label>Phone</label>
-<input type="tel" id="userPhone">
-
-<label>Date</label>
-<div id="dateContainer"></div>
-
-<div class="tokenInfo" id="tokenAvailable"></div>
-
-<button id="bookBtn" disabled>Book Appointment</button>
-
-<div id="result"></div>
-
-</div>
-
-<div id="adminPanel" class="card" style="display:none;">
-<h3>Admin Dashboard</h3>
-<div id="appointmentTable"></div>
-</div>
-
 </div>
 
 <script>
+// ===== PRELOADER LOGIC =====
+window.addEventListener("load", function() {
+  setTimeout(() => {
+    const preloader = document.getElementById("preloader");
+    preloader.style.transition = "opacity 0.5s";
+    preloader.style.opacity = 0;
+    setTimeout(() => {
+      preloader.style.display = "none";
+      document.getElementById("mainContent").style.display = "block";
+      document.body.classList.remove("loading");
+    }, 500);
+  }, 3000);
+});
+
+// ===== SETTINGS FETCH & DROPDOWNS =====
 const scriptURL = "https://script.google.com/macros/s/AKfycby6hVR6u3QCODIrQ8lRybb4AusvejbUxaLPLs4rt8LiQs1YJKVvQ4LqvlwKTBshH-VjOA/exec";
 let settingsData = [];
 
@@ -215,11 +264,9 @@ fetch(scriptURL + "?action=getSettings")
 });
 
 function initialize() {
-
   const doctors = settingsData.filter(r => r[0] === "Doctor");
   const clinics = settingsData.filter(r => r[0] === "Clinic");
 
-  // Doctor dropdown or single
   const doctorSelectElem = document.getElementById("doctorSelect");
   if (doctors.length === 1) {
     document.getElementById("doctorContainer").innerHTML =
@@ -240,7 +287,6 @@ function initialize() {
     doctorSelectElem.addEventListener("change", doctorChanged);
   }
 
-  // Clinic dropdown
   const clinicSelect = document.getElementById("clinicSelect");
   clinicSelect.innerHTML = "";
   clinics.forEach(c => {
@@ -257,13 +303,10 @@ function initialize() {
 
 function showDoctorImage(url) {
   const img = document.getElementById("doctorImage");
-  if (!url) {
-    img.style.display = "none";
-    return;
-  }
+  if (!url) { img.style.display="none"; return; }
   img.src = url;
-  img.style.display = "block";
-  img.onerror = function() { img.style.display = "none"; };
+  img.style.display="block";
+  img.onerror = function(){ img.style.display="none"; };
 }
 
 function doctorChanged() {
@@ -272,8 +315,7 @@ function doctorChanged() {
 }
 
 function updateAddress() {
-  clinicAddress.innerText =
-    clinicSelect.options[clinicSelect.selectedIndex].getAttribute("data-address");
+  clinicAddress.innerText = clinicSelect.options[clinicSelect.selectedIndex].getAttribute("data-address");
 }
 </script>
 
