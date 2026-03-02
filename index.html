@@ -5,11 +5,7 @@
 <title>SMILE Dental Clinic</title>
 <style>
 /* PRELOADER */
-#preloader {
-  position: fixed; top:0; left:0; width:100%; height:100%;
-  background:#f4f6f9; z-index:9999;
-  display:flex; justify-content:center; align-items:center; text-align:center; padding:20px;
-}
+#preloader { position: fixed; top:0; left:0; width:100%; height:100%; background:#f4f6f9; z-index:9999; display:flex; justify-content:center; align-items:center; text-align:center; padding:20px; }
 #preloader p { font-size:28px; font-weight:700; color:#007bff; line-height:1.5; }
 body.loading { overflow:hidden; }
 
@@ -23,13 +19,13 @@ body { font-family:'Segoe UI', sans-serif; margin:0; background:#f4f6f9; }
 
 /* DOCTOR SELECTION */
 label { font-weight:600; margin-top:15px; display:block; }
-.doctorSection { display:flex; align-items:flex-start; gap:12px; margin-top:10px; }
+.doctorSection { display:flex; justify-content:space-between; align-items:flex-start; margin-top:10px; }
 .doctorButtons { display:flex; flex-wrap:wrap; gap:6px; }
 .doctorButtons button { padding:10px 14px; border-radius:6px; border:1px solid #007bff; background:white; cursor:pointer; }
 .doctorButtons button.selected { background:#007bff; color:white; }
 
 /* IMAGE */
-#doctorImage { width:80px; height:106px; object-fit:cover; border-radius:6px; }
+#doctorImage { width:100px; height:133px; object-fit:cover; border-radius:6px; }
 
 /* CLINIC SELECTION */
 .clinicButtons { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
@@ -44,9 +40,11 @@ input, select { width:100%; padding:14px; margin-top:6px; font-size:16px; border
 #bookBtn.duplicate { background:#dc3545; color:white; }
 .tokenInfo { margin-top:15px; font-weight:bold; color:#007bff; }
 
+#doctorQualifications { margin-top:6px; font-weight:500; }
+
 @media(max-width:480px){
   .doctorSection { flex-direction:column; align-items:flex-start; }
-  #doctorImage { width:60px; height:80px; margin-top:6px; }
+  #doctorImage { width:80px; height:106px; margin-top:6px; }
 }
 </style>
 </head>
@@ -65,17 +63,14 @@ input, select { width:100%; padding:14px; margin-top:6px; font-size:16px; border
 <div class="container">
   <div class="card">
 
-    <!-- Doctor selection -->
     <label>Doctor</label>
     <div class="doctorSection">
       <div class="doctorButtons" id="doctorButtons"></div>
       <img id="doctorImage">
     </div>
 
-    <!-- Doctor qualification -->
-    <div id="doctorQualifications" style="margin-top:6px; font-weight:500;"></div>
+    <div id="doctorQualifications"></div>
 
-    <!-- Clinic selection -->
     <label>Clinic</label>
     <div class="clinicButtons" id="clinicButtons"></div>
 
@@ -95,18 +90,14 @@ input, select { width:100%; padding:14px; margin-top:6px; font-size:16px; border
 </div>
 
 <script>
-// PRELOADER
-window.addEventListener("load", function(){
-  setTimeout(()=>{
-    document.getElementById("preloader").style.display="none";
-    document.body.classList.remove("loading");
-  },5000);
+window.addEventListener("load",function(){
+  setTimeout(()=>{ document.getElementById("preloader").style.display="none"; document.body.classList.remove("loading"); },5000);
 });
 
-// SETTINGS & APPOINTMENTS
-const scriptURL = "https://script.google.com/macros/s/AKfycby6hVR6u3QCODIrQ8lRybb4AusvejbUxaLPLs4rt8LiQs1YJKVvQ4LqvlwKTBshH-VjOA/exec";
+const scriptURL="https://script.google.com/macros/s/AKfycby6hVR6u3QCODIrQ8lRybb4AusvejbUxaLPLs4rt8LiQs1YJKVvQ4LqvlwKTBshH-VjOA/exec";
 let settingsData=[], appointmentsData=[];
 let selectedDoctor="", selectedClinic="", doctorQualification="";
+
 const doctorButtonsContainer=document.getElementById("doctorButtons");
 const clinicButtonsContainer=document.getElementById("clinicButtons");
 const doctorImage=document.getElementById("doctorImage");
@@ -127,14 +118,13 @@ fetch(scriptURL+"?action=getSettings").then(r=>r.json()).then(data=>{
   fetchAppointments();
 });
 
-// DOCTORS
 function setupDoctors(){
   const doctors=settingsData.filter(r=>r[0]==="Doctor");
   doctors.forEach(d=>{
     const btn=document.createElement("button");
     btn.innerText=d[1];
     btn.setAttribute("data-img",d[2]);
-    btn.setAttribute("data-qualification",d[3]||""); // Qualification column
+    btn.setAttribute("data-qualification",d[3]||"");
     btn.addEventListener("click",()=>{
       selectedDoctor=d[1];
       doctorQualification=d[3]||"";
@@ -149,7 +139,6 @@ function setupDoctors(){
   if(doctors[0]) doctorButtonsContainer.children[0].click();
 }
 
-// CLINICS
 function setupClinics(){
   const clinics=settingsData.filter(r=>r[0]==="Clinic");
   clinics.forEach(c=>{
@@ -158,35 +147,86 @@ function setupClinics(){
     btn.setAttribute("data-address",c[2]);
     btn.addEventListener("click",()=>{
       selectedClinic=c[1];
-      headerAddress.innerText=c[2]; // display inside header
+      headerAddress.innerText=c[2];
       Array.from(clinicButtonsContainer.children).forEach(b=>b.classList.remove("selected"));
       btn.classList.add("selected");
       checkInputs();
     });
     clinicButtonsContainer.appendChild(btn);
   });
-  if(clinics[0]){
-    clinicButtonsContainer.children[0].click();
-  }
+  if(clinics[0]) clinicButtonsContainer.children[0].click();
 }
 
-// DATES
 function setupDates(){
   const today=new Date();
   const tomorrow=new Date(today.getTime()+86400000);
-  const dates=[
-    {text:"Today", date:formatDate(today)},
-    {text:"Tomorrow", date:formatDate(tomorrow)}
-  ];
-  dates.forEach(d=>{
-    const opt=document.createElement("option");
-    opt.value=d.date; opt.text=d.text+" ("+d.date+")";
-    dateSelect.appendChild(opt);
-  });
+  const dates=[{text:"Today", date:formatDate(today)}, {text:"Tomorrow", date:formatDate(tomorrow)}];
+  dates.forEach(d=>{ const opt=document.createElement("option"); opt.value=d.date; opt.text=d.text+" ("+d.date+")"; dateSelect.appendChild(opt); });
   dateSelect.selectedIndex=0;
   dateSelect.addEventListener("change",checkInputs);
 }
+
 function formatDate(d){ return String(d.getDate()).padStart(2,'0')+"-"+String(d.getMonth()+1).padStart(2,'0')+"-"+d.getFullYear(); }
 
-// APPOINTMENTS
-function
+function fetchAppointments(){
+  fetch(scriptURL+"?action=getAppointments").then(r=>r.json()).then(data=>{
+    appointmentsData=data;
+    updateToken();
+  });
+}
+
+// TOKEN: last token in Appointments sheet for selected date +1
+function updateToken(){
+  const date=dateSelect.value;
+  const tokensForDate=appointmentsData.filter(a=>a.date===date);
+  const lastToken=tokensForDate.length ? Math.max(...tokensForDate.map(a=>Number(a.token))) : 0;
+  tokenAvailable.innerText="Token: "+(lastToken+1);
+}
+
+// INPUT CHECK & DUPLICATE
+[userName,userPhone,dateSelect].forEach(el=>el.addEventListener("input",checkInputs));
+function checkInputs(){
+  bookBtn.disabled=true;
+  bookBtn.innerText="Checking Appointment...";
+  const nameVal=userName.value.trim();
+  const phoneVal=userPhone.value.trim();
+  const dateVal=dateSelect.value;
+  if(!nameVal || !phoneVal || !selectedDoctor || !selectedClinic || !dateVal){
+    bookBtn.disabled=true; bookBtn.innerText="Book Appointment"; return;
+  }
+  const duplicate=appointmentsData.some(a=>a.name===nameVal && a.phone===phoneVal && a.date===dateVal);
+  if(duplicate){ bookBtn.disabled=true; bookBtn.className="duplicate"; bookBtn.innerText="Duplicate Booking"; return; }
+  bookBtn.disabled=false; bookBtn.className="enabled"; bookBtn.innerText="Book Appointment";
+}
+
+// BOOK APPOINTMENT
+bookBtn.addEventListener("click",()=>{
+  const dateVal=dateSelect.value;
+  const tokensForDate=appointmentsData.filter(a=>a.date===dateVal);
+  const lastToken=tokensForDate.length ? Math.max(...tokensForDate.map(a=>Number(a.token))) : 0;
+  const newToken=lastToken+1;
+  const newAppointment={
+    name:userName.value.trim(),
+    phone:userPhone.value.trim(),
+    date:dateVal,
+    doctor:selectedDoctor,
+    clinic:selectedClinic,
+    token:newToken
+  };
+  fetch(scriptURL+"?action=addAppointment",{
+    method:"POST",
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(newAppointment)
+  }).then(r=>r.json()).then(res=>{
+    if(res.success){
+      appointmentsData.push(newAppointment);
+      updateToken();
+      bookBtn.innerText="Booking Successful";
+      bookBtn.disabled=true;
+      bookBtn.className="enabled";
+    }
+  });
+});
+</script>
+</body>
+</html>
