@@ -1,28 +1,207 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="style.css">
-    <title>SMILE Dental Clinic</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SMILE Dental Clinic</title>
+
+<style>
+body {
+  font-family: Arial;
+  margin: 0;
+  padding: 20px;
+}
+
+.header {
+  background-color: #4CAF50;
+  color: white;
+  padding: 15px;
+  text-align: center;
+  font-size: 22px;
+  cursor: pointer;
+}
+
+.container {
+  margin-top: 20px;
+}
+
+select, input {
+  width: 100%;
+  padding: 12px;
+  margin-top: 10px;
+  font-size: 16px;
+}
+
+button {
+  background-color: #4CAF50;
+  color: white;
+  padding: 12px;
+  width: 100%;
+  border: none;
+  margin-top: 15px;
+  font-size: 16px;
+}
+
+img {
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
+  margin-top: 10px;
+}
+
+.address {
+  margin-top: 10px;
+  font-weight: bold;
+}
+</style>
 </head>
+
 <body>
-    <div class="container">
-        <h1>SMILE Dental Clinic</h1>
-        <h2 id="doctorDropdown"></h2>
-        <h3 id="clinicDropdown"></h3>
-        <p id="addressDisplay"></p>
-        <input type="text" id="userName" placeholder="Enter your name">
-        <select id="dateSelect"></select>
-        <img id="doctorImg" src="" alt="Doctor's Picture" style="display:none; width: 75%; height: auto;">
-        <button id="submitBtn">Submit</button>
-    </div>
 
-    <div id="passwordPrompt" style="display:none;">
-        <input type="password" id="adminPassword" placeholder="Enter Admin Password">
-        <button id="passwordSubmit">Submit</button>
-    </div>
+<div class="header" onclick="adminLogin()">
+SMILE Dental Clinic
+</div>
 
-    <script src="script.js"></script>
+<div class="container">
+
+<div id="doctorContainer"></div>
+<img id="doctorImage" style="display:none;"/>
+
+<select id="clinicSelect"></select>
+<div id="clinicAddress" class="address"></div>
+
+<input type="text" id="userName" placeholder="Enter your name">
+
+<div id="dateContainer"></div>
+
+<button onclick="submitForm()">Book Appointment</button>
+
+<div id="tokenDisplay"></div>
+
+</div>
+
+<script>
+const scriptURL = "YOUR_GOOGLE_SCRIPT_URL_HERE";
+
+let settingsData = [];
+
+fetch(scriptURL + "?action=getSettings")
+.then(res => res.json())
+.then(data => {
+  settingsData = data;
+  initialize();
+});
+
+function initialize() {
+
+  const doctors = settingsData.filter(r => r[0] === "Doctor");
+  const clinics = settingsData.filter(r => r[0] === "Clinic");
+  const dateModeRow = settingsData.find(r => r[0] === "DateMode");
+  const dateMode = dateModeRow ? dateModeRow[1] : "dropdown";
+
+  // Doctors
+  if (doctors.length === 1) {
+    document.getElementById("doctorContainer").innerHTML =
+      "<p><b>" + doctors[0][1] + "</b></p>";
+    showDoctorImage(doctors[0][2]);
+  } else {
+    let select = "<select id='doctorSelect' onchange='doctorChanged()'>";
+    doctors.forEach(d => {
+      select += "<option value='" + d[1] + "' data-img='" + d[2] + "'>" + d[1] + "</option>";
+    });
+    select += "</select>";
+    document.getElementById("doctorContainer").innerHTML = select;
+    showDoctorImage(doctors[0][2]);
+  }
+
+  // Clinics
+  const clinicSelect = document.getElementById("clinicSelect");
+  clinics.forEach(c => {
+    const option = document.createElement("option");
+    option.value = c[1];
+    option.text = c[1];
+    option.setAttribute("data-address", c[2]);
+    clinicSelect.appendChild(option);
+  });
+
+  updateAddress();
+  clinicSelect.addEventListener("change", updateAddress);
+
+  // Date
+  if (dateMode === "dropdown") {
+    const today = new Date();
+    const tomorrow = new Date();
+    tomorrow.setDate(today.getDate() + 1);
+    const dayAfter = new Date();
+    dayAfter.setDate(today.getDate() + 2);
+
+    document.getElementById("dateContainer").innerHTML =
+      "<select id='dateSelect'>" +
+      "<option value='" + today.toDateString() + "'>Today (" + today.toDateString() + ")</option>" +
+      "<option value='" + tomorrow.toDateString() + "'>Tomorrow (" + tomorrow.toDateString() + ")</option>" +
+      "<option value='" + dayAfter.toDateString() + "'>Day After Tomorrow (" + dayAfter.toDateString() + ")</option>" +
+      "</select>";
+  } else {
+    document.getElementById("dateContainer").innerHTML =
+      "<input type='date' id='dateSelect'>";
+  }
+}
+
+function showDoctorImage(url) {
+  if (url) {
+    const img = document.getElementById("doctorImage");
+    img.src = url;
+    img.style.display = "block";
+  }
+}
+
+function doctorChanged() {
+  const select = document.getElementById("doctorSelect");
+  const img = select.options[select.selectedIndex].getAttribute("data-img");
+  showDoctorImage(img);
+}
+
+function updateAddress() {
+  const select = document.getElementById("clinicSelect");
+  const address = select.options[select.selectedIndex].getAttribute("data-address");
+  document.getElementById("clinicAddress").innerText = address;
+}
+
+function submitForm() {
+  const name = document.getElementById("userName").value;
+  const doctor = document.getElementById("doctorSelect") ? 
+    document.getElementById("doctorSelect").value :
+    document.getElementById("doctorContainer").innerText;
+
+  const clinicSelect = document.getElementById("clinicSelect");
+  const clinic = clinicSelect.value;
+  const address = clinicSelect.options[clinicSelect.selectedIndex].getAttribute("data-address");
+  const date = document.getElementById("dateSelect").value;
+
+  fetch(scriptURL + "?action=submitAppointment&name=" + name +
+        "&doctor=" + doctor +
+        "&clinic=" + clinic +
+        "&address=" + address +
+        "&date=" + date)
+  .then(res => res.text())
+  .then(token => {
+    document.getElementById("tokenDisplay").innerHTML =
+      "<h3>Your Token Number: " + token + "</h3>";
+  });
+}
+
+function adminLogin() {
+  const password = prompt("Enter Admin Password:");
+  if (!password) return;
+
+  fetch(scriptURL + "?action=checkPassword&password=" + password)
+  .then(res => res.text())
+  .then(result => {
+    if (result === "true") {
+      window.location.href = "https://duckduckgo.com";
+    }
+  });
+}
+</script>
+
 </body>
 </html>
