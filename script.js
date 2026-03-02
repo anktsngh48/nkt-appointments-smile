@@ -1,7 +1,7 @@
-const APP_SCRIPT_URL = 'YOUR_WEB_APP_URL'; // Replace with your Web App URL
+const APP_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxOl7D232cMb3ZPW2GrKco_m7Cxz_cToR_BbOMffxPp-GqrVRkGOX7X33CqpIjuUZ475w/exec'; // Replace with your Web App URL
 
 async function loadDoctors() {
-    const response = await fetch(`${https://script.google.com/macros/s/AKfycbyV40zpSMj4Vn653zzHJYOmw6q_1D1i4mnv94MWkzu_Rdke7udyEMxDUeNY2TqPwgm3EA/exec}/getDoctors`);
+    const response = await fetch(`${APP_SCRIPT_URL}/getDoctors`);
     const doctors = await response.json();
     let doctorDropdown = document.getElementById('doctorDropdown');
     
