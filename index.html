@@ -38,7 +38,7 @@ body {
 .doctorRow {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: flex-start; /* align image to top of content */
   gap: 15px;
 }
 
@@ -47,8 +47,8 @@ body {
 }
 
 .imageContainer {
-  width: 80px;
-  height: 110px; /* 3:4 ratio */
+  width: 120px;       /* fixed width */
+  height: 67.5px;     /* 16:9 aspect ratio (120*9/16) */
   flex-shrink: 0;
 }
 
@@ -68,13 +68,23 @@ label {
   display: block;
 }
 
+/* ===== 40% dropdown width ===== */
 select, input {
-  width: 100%;
   padding: 12px;
   margin-top: 6px;
   font-size: 16px;
   border-radius: 8px;
   border: 1px solid #ddd;
+}
+
+select.doctorSelect, select.clinicSelect {
+  width: 40%;
+  display: inline-block;
+  margin-right: 10px;
+}
+
+input, select:not(.doctorSelect):not(.clinicSelect) {
+  width: 100%;
 }
 
 button {
@@ -125,8 +135,13 @@ th, td {
 /* MOBILE IMPROVEMENT */
 @media(max-width:480px){
   .imageContainer {
-    width: 70px;
-    height: 95px;
+    width: 90px;
+    height: 50.6px; /* maintain 16:9 */
+  }
+
+  select.doctorSelect, select.clinicSelect {
+    width: 100%;
+    margin-bottom: 10px;
   }
 }
 </style>
@@ -147,7 +162,7 @@ SMILE Dental Clinic
     <div id="doctorContainer"></div>
 
     <label>Select Clinic</label>
-    <select id="clinicSelect"></select>
+    <select id="clinicSelect" class="clinicSelect"></select>
     <div id="clinicAddress"></div>
   </div>
 
@@ -196,12 +211,13 @@ function initialize() {
   const doctors = settingsData.filter(r => r[0] === "Doctor");
   const clinics = settingsData.filter(r => r[0] === "Clinic");
 
+  // Doctor dropdown or single
   if (doctors.length === 1) {
     document.getElementById("doctorContainer").innerHTML =
       "<label>Doctor</label><p><b>" + doctors[0][1] + "</b></p>";
     showDoctorImage(doctors[0][2]);
   } else {
-    let select = "<label>Select Doctor</label><select id='doctorSelect'>";
+    let select = "<label>Select Doctor</label><select id='doctorSelect' class='doctorSelect'>";
     doctors.forEach(d => {
       select += "<option value='" + d[1] + "' data-img='" + d[2] + "'>" + d[1] + "</option>";
     });
@@ -213,6 +229,7 @@ function initialize() {
     document.getElementById("doctorSelect").addEventListener("change", doctorChanged);
   }
 
+  // Clinic dropdown
   const clinicSelect = document.getElementById("clinicSelect");
   clinics.forEach(c => {
     const option = document.createElement("option");
@@ -235,9 +252,7 @@ function showDoctorImage(url) {
   }
   img.src = url;
   img.style.display = "block";
-  img.onerror = function() {
-    img.style.display = "none";
-  };
+  img.onerror = function() { img.style.display = "none"; };
 }
 
 function doctorChanged() {
