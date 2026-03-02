@@ -23,7 +23,7 @@ body {
 
 .container {
   padding: 20px;
-  max-width: 500px;
+  max-width: 600px;
   margin: auto;
 }
 
@@ -35,7 +35,6 @@ body {
 }
 
 label {
-  font-size: 14px;
   font-weight: 600;
   margin-top: 15px;
   display: block;
@@ -48,54 +47,51 @@ select, input {
   font-size: 16px;
   border-radius: 8px;
   border: 1px solid #ddd;
-  box-sizing: border-box;
-}
-
-select:focus, input:focus {
-  outline: none;
-  border-color: #007bff;
 }
 
 button {
   padding: 14px;
   width: 100%;
   border: none;
-  margin-top: 20px;
+  margin-top: 15px;
   font-size: 16px;
   border-radius: 8px;
-  transition: 0.3s;
 }
 
 button:disabled {
-  background-color: #cccccc;
+  background: #ccc;
   color: white;
 }
 
 button.enabled {
-  background-color: #28a745;
+  background: #28a745;
   color: white;
 }
 
-img {
-  width: 100%;
-  aspect-ratio: 3 / 4;
-  object-fit: cover;
-  border-radius: 10px;
-  margin-top: 10px;
-}
-
-.address {
-  margin-top: 6px;
-  font-size: 14px;
-  color: #555;
-}
-
-.token {
-  text-align: center;
-  margin-top: 20px;
-  font-size: 18px;
+.tokenInfo {
+  margin-top: 15px;
   font-weight: bold;
   color: #007bff;
+}
+
+.success {
+  background: #28a745 !important;
+}
+
+.duplicate {
+  background: #dc3545 !important;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 15px;
+}
+
+th, td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  font-size: 12px;
 }
 </style>
 </head>
@@ -107,33 +103,42 @@ SMILE Dental Clinic
 </div>
 
 <div class="container">
-<div class="card">
+
+<div id="mainCard" class="card">
 
 <div id="doctorContainer"></div>
-<img id="doctorImage" style="display:none;"/>
+<img id="doctorImage" style="display:none;width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:10px;margin-top:10px;">
 
 <label>Select Clinic</label>
 <select id="clinicSelect"></select>
-<div id="clinicAddress" class="address"></div>
+<div id="clinicAddress"></div>
 
-<label>Enter Your Name</label>
-<input type="text" id="userName" placeholder="Your name">
+<label>Name</label>
+<input type="text" id="userName">
 
-<label>Enter Phone Number</label>
-<input type="tel" id="userPhone" placeholder="Your phone number">
+<label>Phone</label>
+<input type="tel" id="userPhone">
 
-<label>Select Date</label>
+<label>Date</label>
 <div id="dateContainer"></div>
+
+<div class="tokenInfo" id="tokenAvailable"></div>
 
 <button id="bookBtn" disabled>Book Appointment</button>
 
-<div id="tokenDisplay" class="token"></div>
+<div id="result"></div>
 
 </div>
+
+<div id="adminPanel" class="card" style="display:none;">
+<h3>Admin Dashboard</h3>
+<div id="appointmentTable"></div>
+</div>
+
 </div>
 
 <script>
-const scriptURL = "https://script.google.com/macros/s/AKfycbzUD4H6T1xvgwsM9rFXCjDajJn1zjKAwf1cvwuGl-8UdUjcFBL7mjT2ZK_UsBdICIAEWA/exec";
+const scriptURL = "https://script.google.com/macros/s/AKfycby6hVR6u3QCODIrQ8lRybb4AusvejbUxaLPLs4rt8LiQs1YJKVvQ4LqvlwKTBshH-VjOA/exec";
 let settingsData = [];
 
 fetch(scriptURL + "?action=getSettings")
@@ -150,7 +155,7 @@ function initialize() {
   const dateModeRow = settingsData.find(r => r[0] === "DateMode");
   const dateMode = dateModeRow ? dateModeRow[1] : "dropdown";
 
-  // DOCTORS
+  // Doctors
   if (doctors.length === 1) {
     document.getElementById("doctorContainer").innerHTML =
       "<label>Doctor</label><p><b>" + doctors[0][1] + "</b></p>";
@@ -162,15 +167,12 @@ function initialize() {
     });
     select += "</select>";
     document.getElementById("doctorContainer").innerHTML = select;
-
-    const doctorSelect = document.getElementById("doctorSelect");
-    doctorSelect.selectedIndex = 0; // first selected
+    document.getElementById("doctorSelect").selectedIndex = 0;
     showDoctorImage(doctors[0][2]);
-
-    doctorSelect.addEventListener("change", doctorChanged);
+    document.getElementById("doctorSelect").addEventListener("change", doctorChanged);
   }
 
-  // CLINICS
+  // Clinics
   const clinicSelect = document.getElementById("clinicSelect");
   clinics.forEach(c => {
     const option = document.createElement("option");
@@ -179,114 +181,93 @@ function initialize() {
     option.setAttribute("data-address", c[2]);
     clinicSelect.appendChild(option);
   });
-
-  clinicSelect.selectedIndex = 0; // first selected
+  clinicSelect.selectedIndex = 0;
   updateAddress();
   clinicSelect.addEventListener("change", updateAddress);
 
-  // DATE
+  // Date
   if (dateMode === "dropdown") {
     const today = new Date();
-    const tomorrow = new Date();
-    tomorrow.setDate(today.getDate() + 1);
-    const dayAfter = new Date();
-    dayAfter.setDate(today.getDate() + 2);
-
     document.getElementById("dateContainer").innerHTML =
       "<select id='dateSelect'>" +
       "<option value='" + today.toDateString() + "'>Today</option>" +
-      "<option value='" + tomorrow.toDateString() + "'>Tomorrow</option>" +
-      "<option value='" + dayAfter.toDateString() + "'>Day After Tomorrow</option>" +
       "</select>";
-
-    document.getElementById("dateSelect").selectedIndex = 0;
   } else {
     document.getElementById("dateContainer").innerHTML =
       "<input type='date' id='dateSelect'>";
   }
 
-  document.getElementById("bookBtn").addEventListener("click", submitForm);
-
   document.querySelectorAll("input, select").forEach(el => {
     el.addEventListener("input", validateForm);
     el.addEventListener("change", validateForm);
   });
-}
 
-function showDoctorImage(url) {
-  const img = document.getElementById("doctorImage");
-
-  if (!url || url.trim() === "") {
-    img.style.display = "none";
-    return;
-  }
-
-  img.src = url;
-  img.style.display = "block";
-
-  img.onerror = function() {
-    img.style.display = "none"; // hide if broken URL
-  };
-}
-
-function doctorChanged() {
-  const select = document.getElementById("doctorSelect");
-  const img = select.options[select.selectedIndex].getAttribute("data-img");
-  showDoctorImage(img);
-}
-
-function updateAddress() {
-  const select = document.getElementById("clinicSelect");
-  const address = select.options[select.selectedIndex].getAttribute("data-address");
-  document.getElementById("clinicAddress").innerText = address;
+  document.getElementById("bookBtn").addEventListener("click", submitForm);
 }
 
 function validateForm() {
-  const name = document.getElementById("userName").value.trim();
-  const phone = document.getElementById("userPhone").value.trim();
-  const date = document.getElementById("dateSelect").value;
-  const clinic = document.getElementById("clinicSelect").value;
 
-  const btn = document.getElementById("bookBtn");
+  const name = userName.value.trim();
+  const phone = userPhone.value.trim();
+  const date = dateSelect.value;
 
-  if (name && phone && date && clinic) {
-    btn.disabled = false;
-    btn.classList.add("enabled");
+  if (name && phone && date) {
+    bookBtn.disabled = false;
+    bookBtn.classList.add("enabled");
+
+    fetch(scriptURL + "?action=getNextToken&date=" + encodeURIComponent(date))
+    .then(res => res.text())
+    .then(token => {
+      tokenAvailable.innerHTML = "Token " + token + " Available";
+    });
+
+    fetch(scriptURL + "?action=checkDuplicate&name=" +
+      encodeURIComponent(name) +
+      "&phone=" + encodeURIComponent(phone) +
+      "&date=" + encodeURIComponent(date))
+    .then(res => res.text())
+    .then(isDuplicate => {
+      if (isDuplicate === "true") {
+        bookBtn.innerText = "Duplicate Booking";
+        bookBtn.classList.add("duplicate");
+      } else {
+        bookBtn.innerText = "Book Appointment";
+        bookBtn.classList.remove("duplicate");
+      }
+    });
+
   } else {
-    btn.disabled = true;
-    btn.classList.remove("enabled");
+    bookBtn.disabled = true;
   }
 }
 
 function submitForm() {
 
-  const name = document.getElementById("userName").value;
-  const phone = document.getElementById("userPhone").value;
-
-  const doctor = document.getElementById("doctorSelect") ? 
-    document.getElementById("doctorSelect").value :
-    document.querySelector("#doctorContainer p").innerText;
-
-  const clinicSelect = document.getElementById("clinicSelect");
-  const clinic = clinicSelect.value;
-  const address = clinicSelect.options[clinicSelect.selectedIndex].getAttribute("data-address");
-  const date = document.getElementById("dateSelect").value;
+  if (bookBtn.innerText === "Duplicate Booking") return;
 
   fetch(scriptURL + "?action=submitAppointment" +
-        "&name=" + encodeURIComponent(name) +
-        "&phone=" + encodeURIComponent(phone) +
-        "&doctor=" + encodeURIComponent(doctor) +
-        "&clinic=" + encodeURIComponent(clinic) +
-        "&address=" + encodeURIComponent(address) +
-        "&date=" + encodeURIComponent(date))
+    "&name=" + encodeURIComponent(userName.value) +
+    "&phone=" + encodeURIComponent(userPhone.value) +
+    "&doctor=" + encodeURIComponent(
+      doctorSelect ? doctorSelect.value :
+      document.querySelector("#doctorContainer p").innerText
+    ) +
+    "&clinic=" + encodeURIComponent(clinicSelect.value) +
+    "&address=" + encodeURIComponent(
+      clinicSelect.options[clinicSelect.selectedIndex].getAttribute("data-address")
+    ) +
+    "&date=" + encodeURIComponent(dateSelect.value))
   .then(res => res.text())
   .then(token => {
-    document.getElementById("tokenDisplay").innerHTML =
-      "Your Token Number: " + token;
+    bookBtn.innerText = "Booking Successful";
+    bookBtn.classList.add("success");
+    bookBtn.disabled = true;
+    tokenAvailable.innerHTML = "Your Token: " + token;
   });
 }
 
 function adminLogin() {
+
   const password = prompt("Enter Admin Password:");
   if (!password) return;
 
@@ -294,9 +275,46 @@ function adminLogin() {
   .then(res => res.text())
   .then(result => {
     if (result === "true") {
-      window.location.href = "https://duckduckgo.com";
+      mainCard.style.display = "none";
+      adminPanel.style.display = "block";
+      loadAppointments();
     }
   });
+}
+
+function loadAppointments() {
+  fetch(scriptURL + "?action=getAppointments")
+  .then(res => res.json())
+  .then(data => {
+    let html = "<table><tr>";
+    data[0].forEach(h => html += "<th>" + h + "</th>");
+    html += "</tr>";
+
+    for (let i = 1; i < data.length; i++) {
+      html += "<tr>";
+      data[i].forEach(cell => html += "<td>" + cell + "</td>");
+      html += "</tr>";
+    }
+
+    html += "</table>";
+    appointmentTable.innerHTML = html;
+  });
+}
+
+function showDoctorImage(url) {
+  if (!url) return;
+  doctorImage.src = url;
+  doctorImage.style.display = "block";
+}
+
+function doctorChanged() {
+  const img = doctorSelect.options[doctorSelect.selectedIndex].getAttribute("data-img");
+  showDoctorImage(img);
+}
+
+function updateAddress() {
+  clinicAddress.innerText =
+    clinicSelect.options[clinicSelect.selectedIndex].getAttribute("data-address");
 }
 </script>
 
