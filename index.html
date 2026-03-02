@@ -38,7 +38,7 @@ body {
 .doctorRow {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start; /* align image to top of content */
+  align-items: flex-start; /* image aligns to top */
   gap: 15px;
 }
 
@@ -47,8 +47,8 @@ body {
 }
 
 .imageContainer {
-  width: 120px;       /* fixed width */
-  height: 67.5px;     /* 16:9 aspect ratio (120*9/16) */
+  width: 80px;    /* narrow */
+  height: 142px;  /* 9:16 portrait */
   flex-shrink: 0;
 }
 
@@ -68,23 +68,24 @@ label {
   display: block;
 }
 
-/* ===== 40% dropdown width ===== */
-select, input {
+/* Dropdown row layout */
+.dropdownRow {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+select.doctorSelect, select.clinicSelect {
+  width: 40%;
+}
+
+input, select:not(.doctorSelect):not(.clinicSelect) {
+  width: 100%;
   padding: 12px;
   margin-top: 6px;
   font-size: 16px;
   border-radius: 8px;
   border: 1px solid #ddd;
-}
-
-select.doctorSelect, select.clinicSelect {
-  width: 40%;
-  display: inline-block;
-  margin-right: 10px;
-}
-
-input, select:not(.doctorSelect):not(.clinicSelect) {
-  width: 100%;
 }
 
 button {
@@ -135,13 +136,16 @@ th, td {
 /* MOBILE IMPROVEMENT */
 @media(max-width:480px){
   .imageContainer {
-    width: 90px;
-    height: 50.6px; /* maintain 16:9 */
+    width: 60px;
+    height: 106px; /* maintain 9:16 */
+  }
+
+  .dropdownRow {
+    flex-direction: column;
   }
 
   select.doctorSelect, select.clinicSelect {
     width: 100%;
-    margin-bottom: 10px;
   }
 }
 </style>
@@ -161,8 +165,10 @@ SMILE Dental Clinic
   <div class="doctorInfo">
     <div id="doctorContainer"></div>
 
-    <label>Select Clinic</label>
-    <select id="clinicSelect" class="clinicSelect"></select>
+    <div class="dropdownRow">
+      <select id="doctorSelect" class="doctorSelect"></select>
+      <select id="clinicSelect" class="clinicSelect"></select>
+    </div>
     <div id="clinicAddress"></div>
   </div>
 
@@ -212,33 +218,36 @@ function initialize() {
   const clinics = settingsData.filter(r => r[0] === "Clinic");
 
   // Doctor dropdown or single
+  const doctorSelectElem = document.getElementById("doctorSelect");
   if (doctors.length === 1) {
     document.getElementById("doctorContainer").innerHTML =
       "<label>Doctor</label><p><b>" + doctors[0][1] + "</b></p>";
+    doctorSelectElem.style.display = "none";
     showDoctorImage(doctors[0][2]);
   } else {
-    let select = "<label>Select Doctor</label><select id='doctorSelect' class='doctorSelect'>";
+    doctorSelectElem.innerHTML = "";
     doctors.forEach(d => {
-      select += "<option value='" + d[1] + "' data-img='" + d[2] + "'>" + d[1] + "</option>";
+      const opt = document.createElement("option");
+      opt.value = d[1];
+      opt.text = d[1];
+      opt.setAttribute("data-img", d[2]);
+      doctorSelectElem.appendChild(opt);
     });
-    select += "</select>";
-    document.getElementById("doctorContainer").innerHTML = select;
-
-    document.getElementById("doctorSelect").selectedIndex = 0;
+    doctorSelectElem.selectedIndex = 0;
     showDoctorImage(doctors[0][2]);
-    document.getElementById("doctorSelect").addEventListener("change", doctorChanged);
+    doctorSelectElem.addEventListener("change", doctorChanged);
   }
 
   // Clinic dropdown
   const clinicSelect = document.getElementById("clinicSelect");
+  clinicSelect.innerHTML = "";
   clinics.forEach(c => {
-    const option = document.createElement("option");
-    option.value = c[1];
-    option.text = c[1];
-    option.setAttribute("data-address", c[2]);
-    clinicSelect.appendChild(option);
+    const opt = document.createElement("option");
+    opt.value = c[1];
+    opt.text = c[1];
+    opt.setAttribute("data-address", c[2]);
+    clinicSelect.appendChild(opt);
   });
-
   clinicSelect.selectedIndex = 0;
   updateAddress();
   clinicSelect.addEventListener("change", updateAddress);
