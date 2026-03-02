@@ -150,7 +150,7 @@ function initialize() {
   const dateModeRow = settingsData.find(r => r[0] === "DateMode");
   const dateMode = dateModeRow ? dateModeRow[1] : "dropdown";
 
-  // Doctors
+  // DOCTORS
   if (doctors.length === 1) {
     document.getElementById("doctorContainer").innerHTML =
       "<label>Doctor</label><p><b>" + doctors[0][1] + "</b></p>";
@@ -162,11 +162,16 @@ function initialize() {
     });
     select += "</select>";
     document.getElementById("doctorContainer").innerHTML = select;
+
+    // FIRST OPTION SELECTED BY DEFAULT
+    const doctorSelect = document.getElementById("doctorSelect");
+    doctorSelect.selectedIndex = 0;
     showDoctorImage(doctors[0][2]);
-    document.getElementById("doctorSelect").addEventListener("change", doctorChanged);
+
+    doctorSelect.addEventListener("change", doctorChanged);
   }
 
-  // Clinics
+  // CLINICS
   const clinicSelect = document.getElementById("clinicSelect");
   clinics.forEach(c => {
     const option = document.createElement("option");
@@ -176,10 +181,11 @@ function initialize() {
     clinicSelect.appendChild(option);
   });
 
+  clinicSelect.selectedIndex = 0; // DEFAULT FIRST
   updateAddress();
   clinicSelect.addEventListener("change", updateAddress);
 
-  // Date
+  // DATE
   if (dateMode === "dropdown") {
     const today = new Date();
     const tomorrow = new Date();
@@ -193,16 +199,49 @@ function initialize() {
       "<option value='" + tomorrow.toDateString() + "'>Tomorrow</option>" +
       "<option value='" + dayAfter.toDateString() + "'>Day After Tomorrow</option>" +
       "</select>";
+
+    document.getElementById("dateSelect").selectedIndex = 0;
   } else {
     document.getElementById("dateContainer").innerHTML =
       "<input type='date' id='dateSelect'>";
   }
 
   document.getElementById("bookBtn").addEventListener("click", submitForm);
+
   document.querySelectorAll("input, select").forEach(el => {
     el.addEventListener("input", validateForm);
     el.addEventListener("change", validateForm);
   });
+}
+
+function convertDriveLink(url) {
+  if (!url) return "";
+  if (url.includes("drive.google.com")) {
+    const idMatch = url.match(/[-\w]{25,}/);
+    if (idMatch) {
+      return "https://drive.google.com/uc?export=view&id=" + idMatch[0];
+    }
+  }
+  return url;
+}
+
+function showDoctorImage(url) {
+  if (!url) return;
+  const img = document.getElementById("doctorImage");
+  img.src = convertDriveLink(url);
+  img.style.display = "block";
+}
+
+function doctorChanged() {
+  const select = document.getElementById("doctorSelect");
+  const img = select.options[select.selectedIndex].getAttribute("data-img");
+  showDoctorImage(img);
+}
+
+function updateAddress() {
+  const select = document.getElementById("clinicSelect");
+  const address = select.options[select.selectedIndex].getAttribute("data-address");
+  document.getElementById("clinicAddress").innerText = address;
 }
 
 function validateForm() {
@@ -220,26 +259,6 @@ function validateForm() {
     btn.disabled = true;
     btn.classList.remove("enabled");
   }
-}
-
-function showDoctorImage(url) {
-  if (url) {
-    const img = document.getElementById("doctorImage");
-    img.src = url;
-    img.style.display = "block";
-  }
-}
-
-function doctorChanged() {
-  const select = document.getElementById("doctorSelect");
-  const img = select.options[select.selectedIndex].getAttribute("data-img");
-  showDoctorImage(img);
-}
-
-function updateAddress() {
-  const select = document.getElementById("clinicSelect");
-  const address = select.options[select.selectedIndex].getAttribute("data-address");
-  document.getElementById("clinicAddress").innerText = address;
 }
 
 function submitForm() {
