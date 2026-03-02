@@ -22,12 +22,13 @@
 }
 
 #preloader p {
-  font-size: 18px;
-  font-weight: 600;
+  font-size: 28px;       /* BIGGER text */
+  font-weight: 700;
   color:#007bff;
   line-height:1.5;
 }
 
+/* HIDE BODY SCROLL WHILE LOADING */
 body.loading {
   overflow: hidden;
 }
@@ -175,6 +176,10 @@ th, td {
   select.doctorSelect, select.clinicSelect {
     width: 100%;
   }
+
+  #preloader p {
+    font-size: 22px; /* slightly smaller on mobile */
+  }
 }
 </style>
 </head>
@@ -249,7 +254,7 @@ window.addEventListener("load", function() {
       document.getElementById("mainContent").style.display = "block";
       document.body.classList.remove("loading");
     }, 500);
-  }, 3000);
+  }, 5000); // 5 seconds
 });
 
 // ===== SETTINGS FETCH & DROPDOWNS =====
