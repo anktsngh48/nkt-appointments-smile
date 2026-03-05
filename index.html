@@ -3,6 +3,8 @@
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Smile Dental Hospital</title>
+<!-- QR code library -->
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 <style>
 #preloader{
   position:fixed;top:0;left:0;width:100%;height:100%;
@@ -24,7 +26,6 @@ body{font-family:Segoe UI,sans-serif;margin:0;background:#f4f6f9;}
 .card{background:white;padding:25px;border-radius:12px;box-shadow:0 6px 18px rgba(0,0,0,0.08);}
 label{font-weight:600;display:block;margin-top:15px;}
 
-/* Doctor buttons */
 .doctorSection{display:flex;align-items:flex-start;gap:12px;margin-top:4px;}
 .doctorButtons{flex:1;display:flex;flex-wrap:wrap;gap:8px;align-content:flex-start;}
 .doctorButtons button{
@@ -37,7 +38,6 @@ label{font-weight:600;display:block;margin-top:15px;}
 .doctorButtons button.selected{background:#007bff;color:white;}
 #doctorImage{width:100px;height:130px;object-fit:cover;border-radius:6px;display:none;}
 
-/* Clinic buttons */
 .clinicButtons{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;}
 .clinicButtons button{
   border:1px solid #007bff;background:white;border-radius:6px;
@@ -45,7 +45,6 @@ label{font-weight:600;display:block;margin-top:15px;}
 }
 .clinicButtons button.selected{background:#007bff;color:white;}
 
-/* Inputs */
 input,select{
   width:100%;padding:12px;margin-top:6px;border-radius:8px;
   border:1px solid #ddd;font-size:15px;box-sizing:border-box;
@@ -54,7 +53,6 @@ input.err{border-color:#dc3545;}
 .phone-hint{font-size:12px;color:#888;margin-top:3px;}
 .phone-hint.err{color:#dc3545;}
 
-/* Token display */
 .tokenInfo{
   margin-top:15px;font-weight:bold;text-align:center;
   font-size:16px;padding:10px;border-radius:8px;
@@ -62,37 +60,32 @@ input.err{border-color:#dc3545;}
 .tokenInfo.avail{color:#007bff;background:#e8f0fe;}
 .tokenInfo.full{color:#dc3545;background:#fdecea;}
 
-/* Book button — base is grey/disabled; specific states override */
+/* Book button — base always grey/disabled */
 #bookBtn{
   width:100%;padding:14px;margin-top:16px;border-radius:8px;
   border:none;color:white;font-size:15px;font-weight:600;
-  cursor:not-allowed;background:#aaa;transition:background .15s;
+  background:#aaa;cursor:not-allowed;transition:background .15s;
 }
-#bookBtn.ready{background:#28a745;cursor:pointer;}
-#bookBtn.chk{background:#f0a500;cursor:not-allowed;}
-#bookBtn.dup{background:#dc3545;cursor:not-allowed;}
-#bookBtn.noslot{background:#dc3545;cursor:not-allowed;}
-#bookBtn.booking{background:#f0a500;cursor:not-allowed;}
-#bookBtn.booked{background:#28a745;cursor:not-allowed;}  /* green but disabled */
+#bookBtn.ready  {background:#28a745;cursor:pointer;}
+#bookBtn.chk    {background:#f0a500;}
+#bookBtn.dup    {background:#dc3545;}
+#bookBtn.noslot {background:#dc3545;}
+#bookBtn.booked {background:#28a745;}
 
-/* Status message */
 #statusMsg{
   margin-top:10px;text-align:center;font-size:14px;
   font-weight:600;min-height:18px;padding:4px;
 }
 #statusMsg.success{color:#28a745;}
-#statusMsg.err{color:#dc3545;}
-#statusMsg.warn{color:#e67e22;}
+#statusMsg.err    {color:#dc3545;}
+#statusMsg.warn   {color:#e67e22;}
 
-/* Download button — hidden until booking confirmed */
 #downloadBtn{
   display:none;width:100%;padding:11px;margin-top:8px;
   border-radius:8px;border:2px solid #007bff;background:white;
   color:#007bff;font-size:14px;font-weight:600;cursor:pointer;
   box-sizing:border-box;
 }
-
-/* Hidden admin */
 .hiddenInput{opacity:0;position:fixed;top:-9999px;left:-9999px;height:1px;width:1px;pointer-events:none;}
 </style>
 </head>
@@ -109,60 +102,58 @@ input.err{border-color:#dc3545;}
   Smile Dental Hospital
   <span id="headerAddress"></span>
 </div>
-
 <input type="password" id="adminInput" class="hiddenInput" autocomplete="off">
 
-<div class="container">
-  <div class="card">
+<div class="container"><div class="card">
 
-    <label>Doctor</label>
-    <div class="doctorSection">
-      <div class="doctorButtons" id="doctorButtons"></div>
-      <img id="doctorImage" alt="Doctor">
-    </div>
-
-    <label>Clinic</label>
-    <div class="clinicButtons" id="clinicButtons"></div>
-
-    <label>Name</label>
-    <input id="userName" type="text" placeholder="Full Name">
-
-    <label>Phone</label>
-    <input id="userPhone" type="tel" placeholder="10-digit Mobile Number" maxlength="10" inputmode="numeric">
-    <div class="phone-hint" id="phoneHint">Enter 10-digit number</div>
-
-    <label>Address</label>
-    <input id="userAddress" type="text" placeholder="Your Address">
-
-    <label>Date</label>
-    <select id="dateSelect"></select>
-
-    <div class="tokenInfo avail" id="tokenDiv">Token Available: —</div>
-
-    <button id="bookBtn" type="button" disabled>Book Appointment</button>
-    <div id="statusMsg"></div>
-    <button id="downloadBtn" type="button">⬇ Download Booking Receipt</button>
-
+  <label>Doctor</label>
+  <div class="doctorSection">
+    <div class="doctorButtons" id="doctorButtons"></div>
+    <img id="doctorImage" alt="Doctor">
   </div>
-</div>
+
+  <label>Clinic</label>
+  <div class="clinicButtons" id="clinicButtons"></div>
+
+  <label>Name</label>
+  <input id="userName" type="text" placeholder="Full Name">
+
+  <label>Phone</label>
+  <input id="userPhone" type="tel" placeholder="10-digit Mobile Number" maxlength="10" inputmode="numeric">
+  <div class="phone-hint" id="phoneHint">Enter 10-digit number</div>
+
+  <label>Address</label>
+  <input id="userAddress" type="text" placeholder="Your Address">
+
+  <label>Date</label>
+  <select id="dateSelect"></select>
+
+  <div class="tokenInfo avail" id="tokenDiv">Token Available: —</div>
+
+  <button id="bookBtn" type="button" disabled>Book Appointment</button>
+  <div id="statusMsg"></div>
+  <button id="downloadBtn" type="button">⬇ Download Booking Receipt</button>
+
+</div></div>
 
 <script>
-// ── REPLACE WITH YOUR WEB APP URL ───────────────────────────────
+// ── YOUR WEB APP URL ────────────────────────────────────────────
 const scriptURL = "https://script.google.com/macros/s/AKfycby6hVR6u3QCODIrQ8lRybb4AusvejbUxaLPLs4rt8LiQs1YJKVvQ4LqvlwKTBshH-VjOA/exec";
 // ────────────────────────────────────────────────────────────────
 
-let settingsData         = [];
-let selectedDoctor       = "";
-let selectedClinic       = "";
-let selectedClinicAddress= "";
-let adminPassword        = "";
-let slotLimits           = {};
-// States: idle | checking | ready | duplicate | full | booking | done
-let bookingState         = "idle";
-let checkTimer           = null;
-let slotsAvailable       = true;
-let tokenChecking        = false;
-let lastBooking          = null;
+let settingsData          = [];
+let selectedDoctor        = "";
+let selectedClinic        = "";
+let selectedClinicAddress = "";
+let adminPassword         = "";
+let slotLimits            = {};
+// bookingState: idle | checking | ready | duplicate | full | booking | done
+let bookingState          = "idle";
+let checkTimer            = null;
+let slotsAvailable        = true;
+let lastBooking           = null;
+// Tracks the last inputs that triggered a check — avoids redundant API calls
+let lastCheckedKey        = "";
 
 const $doctor  = document.getElementById("doctorButtons");
 const $clinic  = document.getElementById("clinicButtons");
@@ -179,13 +170,12 @@ const $status  = document.getElementById("statusMsg");
 const $hint    = document.getElementById("phoneHint");
 const $dlBtn   = document.getElementById("downloadBtn");
 
-// ── INIT ──────────────────────────────────────────────────────────
+// ── INIT ─────────────────────────────────────────────────────────
 window.addEventListener("load", () => {
-  setTimeout(() => { document.getElementById("preloader").style.display = "none"; }, 1000);
+  setTimeout(() => { document.getElementById("preloader").style.display = "none"; }, 5000);
   loadSettings();
 });
 
-// ── SETTINGS ──────────────────────────────────────────────────────
 async function loadSettings() {
   try {
     const r = await fetch(scriptURL + "?action=getSettings");
@@ -203,22 +193,22 @@ async function loadSettings() {
   }
 }
 
-// ── DATES ─────────────────────────────────────────────────────────
+// ── DATES ────────────────────────────────────────────────────────
 function setupDates() {
   const d0 = new Date(), d1 = new Date(d0.getTime() + 86400000);
   [d0, d1].forEach(d => {
     const o = document.createElement("option");
-    o.value = o.text = fmtDate(d);
+    o.value = o.text = dateFmt(d);
     $date.appendChild(o);
   });
   $date.addEventListener("change", onSelChange);
 }
-function fmtDate(d) {
+function dateFmt(d) {
   return String(d.getDate()).padStart(2,"0") + "-" +
          String(d.getMonth()+1).padStart(2,"0") + "-" + d.getFullYear();
 }
 
-// ── DOCTORS ───────────────────────────────────────────────────────
+// ── DOCTORS ──────────────────────────────────────────────────────
 function setupDoctors() {
   settingsData.filter(r => r[0] === "Doctor").forEach((d, i) => {
     const b = document.createElement("button");
@@ -237,7 +227,7 @@ function setupDoctors() {
   });
 }
 
-// ── CLINICS ───────────────────────────────────────────────────────
+// ── CLINICS ──────────────────────────────────────────────────────
 function setupClinics() {
   settingsData.filter(r => r[0] === "Clinic").forEach((c, i) => {
     const b = document.createElement("button");
@@ -256,7 +246,7 @@ function setupClinics() {
   });
 }
 
-// ── PHONE ─────────────────────────────────────────────────────────
+// ── PHONE ────────────────────────────────────────────────────────
 $phone.addEventListener("keydown", e => {
   const ok = ["Backspace","Delete","Tab","ArrowLeft","ArrowRight","Home","End"];
   if (!ok.includes(e.key) && !/^\d$/.test(e.key)) e.preventDefault();
@@ -265,93 +255,95 @@ $phone.addEventListener("input", () => {
   $phone.value = $phone.value.replace(/\D/g,"").slice(0,10);
   const len = $phone.value.length;
   if (len === 0) {
-    $hint.textContent = "Enter 10-digit number";
-    $hint.className = "phone-hint";
-    $phone.classList.remove("err");
+    $hint.textContent = "Enter 10-digit number"; $hint.className = "phone-hint"; $phone.classList.remove("err");
   } else if (len < 10) {
-    $hint.textContent = len + "/10 digits";
-    $hint.className = "phone-hint err";
-    $phone.classList.add("err");
+    $hint.textContent = len + "/10 digits"; $hint.className = "phone-hint err"; $phone.classList.add("err");
   } else {
-    $hint.textContent = "✓ Valid";
-    $hint.className = "phone-hint";
-    $phone.classList.remove("err");
+    $hint.textContent = "✓ Valid"; $hint.className = "phone-hint"; $phone.classList.remove("err");
   }
   onFormInput();
 });
 $name.addEventListener("input", onFormInput);
 $address.addEventListener("input", onFormInput);
-
 function phoneValid() { return /^\d{10}$/.test($phone.value); }
 
-// ── SELECTION CHANGE (doctor / clinic / date) ─────────────────────
+// ── SELECTION CHANGE ─────────────────────────────────────────────
+// Doctor / Clinic / Date changed
 function onSelChange() {
-  // Once booked, changing selection does nothing until user edits form fields
-  if (bookingState === "done" || bookingState === "booking") return;
+  if (bookingState === "booking") return;
+  // Reset everything — new selection means re-check from scratch
+  lastCheckedKey = "";
+  if (bookingState === "done") {
+    // Restore token div since context changed
+    $token.style.display = "";
+    clearStatus();
+    $dlBtn.style.display = "none";
+  }
   bookingState = "idle";
   clearStatus();
-  refreshToken(); // refreshToken calls debounceCheck() in its finally
+  refreshToken(); // async; calls scheduleCheck() when done
 }
 
-// ── FORM INPUT ────────────────────────────────────────────────────
-// After a confirmed booking, editing ANY field treats this as a new booking —
-// full duplicate/slot check runs again from scratch.
+// ── FORM INPUT ───────────────────────────────────────────────────
 function onFormInput() {
   if (bookingState === "booking") return;
   if (bookingState === "done") {
-    // User is entering new patient details — start fresh
-    // Keep download button and status message visible (previous booking record)
-    bookingState = "idle";
-    // Re-show token div for new booking
+    // User is filling in new patient details — restore token div
     $token.style.display = "";
+    // Keep download button and confirmation message visible as record
   }
-  if (bookingState === "duplicate") clearStatus();
   bookingState = "idle";
-  debounceCheck();
+  scheduleCheck();
 }
 
-// ── DEBOUNCE ──────────────────────────────────────────────────────
-function debounceCheck() {
+// ── SCHEDULE CHECK ───────────────────────────────────────────────
+function scheduleCheck() {
   clearTimeout(checkTimer);
-  checkTimer = setTimeout(runCheck, 450);
+  checkTimer = setTimeout(runCheck, 500);
 }
 
-// ── MAIN CHECK ────────────────────────────────────────────────────
-// This runs automatically whenever the form changes.
-// It shows "Duplicate Appointment" BEFORE the user tries to book.
+// ── MAIN CHECK (fully decoupled from token fetch) ─────────────────
+// This is the ONLY path that enables the Book button.
+// The button is NEVER enabled without passing through this function.
 async function runCheck() {
+  // Never interrupt an in-progress booking
   if (bookingState === "booking" || bookingState === "done") return;
 
-  // Wait for token fetch to finish
-  if (tokenChecking) { debounceCheck(); return; }
-
-  // Slots full — stop here
+  // Slots full — button stays locked
   if (!slotsAvailable) { setState("full"); return; }
 
-  const allFilled = $name.value.trim() && phoneValid() && $address.value.trim();
-  if (!allFilled) {
-    setState("idle");
-    return;
+  const name    = $name.value.trim();
+  const phone   = $phone.value.trim();
+  const address = $address.value.trim();
+  const allFilled = name && phoneValid() && address;
+
+  if (!allFilled) { setState("idle"); return; }
+
+  // Build a cache key — skip API call if nothing changed since last check
+  const checkKey = name + "|" + phone + "|" + selectedClinic + "|" + $date.value;
+  if (checkKey === lastCheckedKey && (bookingState === "ready" || bookingState === "duplicate")) {
+    return; // result is still valid
   }
 
-  // All fields filled → run live duplicate check
   setState("checking");
 
   try {
     const r = await fetch(
       scriptURL +
       "?action=checkDuplicate" +
-      "&name="   + encodeURIComponent($name.value.trim()) +
-      "&phone="  + encodeURIComponent($phone.value.trim()) +
+      "&name="   + encodeURIComponent(name) +
+      "&phone="  + encodeURIComponent(phone) +
       "&clinic=" + encodeURIComponent(selectedClinic) +
       "&date="   + encodeURIComponent($date.value)
     );
     const d = await r.json();
 
+    lastCheckedKey = checkKey; // cache this result
+
+    // Re-check slots in case they changed while we were fetching
     if (!slotsAvailable) { setState("full"); return; }
 
     if (d.duplicate) {
-      // Show "Duplicate Appointment" on button BEFORE user clicks book
       setState("duplicate");
       setStatus("An appointment for this name & phone already exists at this clinic on the selected date.", "warn");
     } else {
@@ -359,17 +351,19 @@ async function runCheck() {
       clearStatus();
     }
   } catch(e) {
-    if (!slotsAvailable) { setState("full"); return; }
-    setState("ready"); // fail open on network error
+    // API error — keep button DISABLED, don't enable blindly
+    setState("idle");
+    setStatus("Could not verify appointment. Please try again.", "warn");
+    lastCheckedKey = ""; // force re-check next time
   }
 }
 
-// ── TOKEN REFRESH ─────────────────────────────────────────────────
+// ── TOKEN REFRESH (fully independent of button logic) ────────────
 async function refreshToken() {
   if (!selectedDoctor || !selectedClinic) return;
-  tokenChecking = true;
   $token.textContent = "Checking availability…";
   $token.className   = "tokenInfo avail";
+  $token.style.display = "";
 
   try {
     const r = await fetch(
@@ -387,8 +381,8 @@ async function refreshToken() {
       slotsAvailable     = false;
       $token.textContent = "No Booking Available";
       $token.className   = "tokenInfo full";
-      setStatus("All slots are full for this doctor, clinic & date.", "err");
       setState("full");
+      setStatus("All slots are full for this doctor, clinic & date.", "err");
     } else {
       slotsAvailable     = true;
       $token.textContent = "Token Available: " + (maxTok + 1);
@@ -396,15 +390,15 @@ async function refreshToken() {
       if (bookingState === "full") { bookingState = "idle"; clearStatus(); }
     }
   } catch(e) {
-    slotsAvailable     = true;
+    slotsAvailable     = true; // fail open
     $token.textContent = "Token: —";
-  } finally {
-    tokenChecking = false;
-    debounceCheck(); // run button check once token result is known
   }
+
+  // Always run check after token result is known
+  scheduleCheck();
 }
 
-// ── BOOK ──────────────────────────────────────────────────────────
+// ── BOOK ─────────────────────────────────────────────────────────
 $btn.addEventListener("click", async () => {
   if (bookingState !== "ready") return;
   setState("booking");
@@ -434,17 +428,15 @@ $btn.addEventListener("click", async () => {
         token:         d.token,
         timestamp:     new Date().toLocaleString("en-IN")
       };
-
+      lastCheckedKey = ""; // reset so next booking gets a fresh check
       setState("done");
-      // Hide token display after successful booking
-      $token.style.display = "none";
-      setStatus("✓ Appointment booked successfully! Token: " + d.token, "success");
-      // Show download button
+      $token.style.display = "none"; // hide token section on confirmed booking
+      setStatus("✓ Appointment booked! Token: " + d.token, "success");
       $dlBtn.style.display = "block";
 
     } else if (d.status === "duplicate") {
       setState("duplicate");
-      setStatus("Duplicate appointment — this name & phone are already booked at this clinic on the selected date.", "warn");
+      setStatus("Duplicate — already booked for this name & phone at this clinic on this date.", "warn");
     } else if (d.status === "full") {
       slotsAvailable     = false;
       $token.textContent = "No Booking Available";
@@ -452,34 +444,42 @@ $btn.addEventListener("click", async () => {
       setState("full");
       setStatus("All slots are full for this doctor, clinic & date.", "err");
     } else {
-      setState("ready");
+      setState("idle");
       setStatus("Server error. Please try again.", "err");
     }
   } catch(e) {
-    setState("ready");
+    setState("idle");
     setStatus("Network error. Please check your connection.", "err");
   }
 });
 
-// ── DOWNLOAD RECEIPT ──────────────────────────────────────────────
-$dlBtn.addEventListener("click", () => {
+// ── DOWNLOAD RECEIPT ─────────────────────────────────────────────
+$dlBtn.addEventListener("click", async () => {
   if (!lastBooking) return;
-  buildAndDownloadReceipt(lastBooking);
+  await buildReceipt(lastBooking);
 });
 
-function buildAndDownloadReceipt(b) {
-  const SCALE  = 3;    // 3× for crisp high-res PNG
-  const W      = 240;  // narrow ATM-receipt width (pixels)
-  const TH     = 16;   // tooth height for zigzag cut marks
-  const PAD    = 12;
+async function buildReceipt(b) {
+  const SCALE = 3;
+  const W     = 200;   // very narrow — small shop receipt width
+  const TH    = 12;    // tooth height for cut marks
+  const PAD   = 10;
 
-  // Measure content height first
-  const lines  = buildReceiptLines(b);
-  let contentH = TH + 8;
-  for (const l of lines) contentH += measureLineH(l);
-  contentH += TH + 8;
+  // Build content lines
+  const lines = buildLines(b);
 
+  // Measure total height
+  let contentH = TH + 6;
+  for (const l of lines) contentH += measureH(l);
+  contentH += TH + 6;
   const H = contentH;
+
+  // Generate QR code as data URL
+  let qrDataURL = null;
+  try {
+    const qrText = "Token:" + b.token + " | " + b.name + " | " + b.doctor + " | " + b.clinic + " | " + b.date;
+    qrDataURL = await QRCode.toDataURL(qrText, { width: 80, margin: 1, color: { dark:"#000000", light:"#fefef900" } });
+  } catch(e) { /* QR optional */ }
 
   const canvas = document.createElement("canvas");
   canvas.width  = W * SCALE;
@@ -487,200 +487,196 @@ function buildAndDownloadReceipt(b) {
   const ctx = canvas.getContext("2d");
   ctx.scale(SCALE, SCALE);
 
-  // Shadow/background outside the receipt shape
-  ctx.fillStyle = "#c8c8c8";
-  ctx.fillRect(0, 0, W, H);
-
-  // Build zigzag clip path
-  const tW     = 10;
+  // ── Clip to zigzag receipt shape (transparent outside) ──────────
+  const tW     = 8;
   const nTeeth = Math.floor(W / tW);
   const tStart = (W - nTeeth * tW) / 2;
 
-  ctx.save();
   ctx.beginPath();
-
-  // Top edge: zigzag cuts INTO the paper (teeth point upward)
+  // Top edge — teeth bite upward
   ctx.moveTo(0, TH);
   for (let i = 0; i < nTeeth; i++) {
     const x0 = tStart + i * tW;
-    ctx.lineTo(x0 + tW / 2, 0);
+    ctx.lineTo(x0 + tW/2, 0);
     ctx.lineTo(x0 + tW, TH);
   }
   ctx.lineTo(W, TH);
   ctx.lineTo(W, H - TH);
-
-  // Bottom edge: zigzag cuts INTO the paper (teeth point downward)
+  // Bottom edge — teeth bite downward
   for (let i = nTeeth; i > 0; i--) {
     const x0 = tStart + i * tW;
-    ctx.lineTo(x0 - tW / 2, H);
+    ctx.lineTo(x0 - tW/2, H);
     ctx.lineTo(x0 - tW, H - TH);
   }
   ctx.lineTo(0, H - TH);
   ctx.closePath();
   ctx.clip();
 
-  // Paper fill — warm off-white thermal paper colour
-  ctx.fillStyle = "#fefef9";
+  // Paper fill — warm thermal paper off-white
+  ctx.fillStyle = "#fefdf6";
   ctx.fillRect(0, 0, W, H);
 
-  // Subtle horizontal scan-line texture (thermal printer look)
+  // Subtle scan-line texture
   for (let yy = TH; yy < H - TH; yy += 3) {
-    ctx.fillStyle = "rgba(0,0,0,0.008)";
+    ctx.fillStyle = "rgba(0,0,0,0.007)";
     ctx.fillRect(0, yy, W, 1);
   }
 
-  // Draw content
-  let y = TH + 8;
-  for (const line of lines) {
-    y = drawReceiptLine(ctx, line, y, W, PAD);
+  // Draw text lines
+  let y = TH + 6;
+  for (const l of lines) {
+    y = drawLine(ctx, l, y, W, PAD);
   }
 
-  ctx.restore();
+  // Draw QR code if available
+  if (qrDataURL) {
+    const qrSize = 54;
+    const qrX    = (W - qrSize) / 2;
+    const qrImg  = new Image();
+    await new Promise(res => {
+      qrImg.onload = res;
+      qrImg.src = qrDataURL;
+    });
+    // Small white background square for QR
+    ctx.fillStyle = "#fff";
+    ctx.fillRect(qrX - 2, y - 2, qrSize + 4, qrSize + 4);
+    ctx.drawImage(qrImg, qrX, y, qrSize, qrSize);
+    y += qrSize + 6;
+  }
 
-  // Download
+  // Download PNG (transparent outside zigzag)
   const a = document.createElement("a");
-  a.download = "Receipt_Token" + b.token + "_" + b.date + ".png";
+  a.download = "Receipt_T" + b.token + "_" + b.date + ".png";
   a.href = canvas.toDataURL("image/png");
   a.click();
 }
 
-// ── Receipt line definitions ──────────────────────────────────────
-function buildReceiptLines(b) {
+// ── Receipt line builders ─────────────────────────────────────────
+function buildLines(b) {
   const L = [];
-  const g = (h)      => L.push({ type:"gap",  h });
-  const d = ()       => L.push({ type:"dash" });
-  const c = (text, size, bold, color) => L.push({ type:"center", text, size: size||9, bold: !!bold, color: color||"#222" });
-  const row = (label, value) => L.push({ type:"row", label, value });
+  const g  = h             => L.push({ t:"gap", h });
+  const d  = ()            => L.push({ t:"dash" });
+  const c  = (txt,sz,bold,col) => L.push({ t:"c", txt, sz:sz||9, bold:!!bold, col:col||"#222" });
+  const row= (lbl,val)     => L.push({ t:"row", lbl, val });
 
   g(4);
-  c("SMILE DENTAL HOSPITAL", 12, true, "#000");
-  g(4);
-  c(b.clinic, 9, false, "#444");
-  c(b.clinicAddress, 8, false, "#666");
-  g(6);
-  d();
-  g(6);
-  c("APPOINTMENT RECEIPT", 9, true, "#333");
+  c("SMILE DENTAL HOSPITAL", 11, true, "#000");
   g(3);
-  c(b.date, 9, false, "#555");
-  g(8);
-  c("TOKEN NO.", 8, false, "#888");
-  g(2);
-  c("#" + b.token, 36, true, "#000");
-  g(8);
+  c(b.clinic, 8.5, false, "#444");
+  c(b.clinicAddress, 7.5, false, "#777");
+  g(5);
   d();
-  g(8);
-  row("DOCTOR",  b.doctor);
-  g(4);
-  row("PATIENT", b.name);
-  g(4);
-  row("PHONE",   b.phone);
-  g(4);
-  row("ADDRESS", b.address);
-  g(4);
-  row("DATE",    b.date);
-  g(4);
-  row("BOOKED",  b.timestamp);
-  g(8);
-  d();
+  g(5);
+  c("APPOINTMENT RECEIPT", 8.5, true, "#333");
+  g(3);
   g(6);
-  c("** APPOINTMENT CONFIRMED **", 8, true, "#000");
-  g(4);
-  c("Carry this receipt to your", 7.5, false, "#888");
-  c("appointment", 7.5, false, "#888");
-  g(10);
+  c("TOKEN NO.", 7.5, false, "#888");
+  g(1);
+  c("#" + b.token, 32, true, "#000");
+  g(7);
+  d();
+  g(7);
+  row("DOCTOR",   b.doctor);
+  g(3);
+  row("PATIENT",  b.name);
+  g(3);
+  row("PHONE",    b.phone);
+  g(3);
+  row("ADDRESS",  b.address);
+  g(3);
+  row("APPT DATE", b.date);
+  g(3);
+  row("BOOKED",   b.timestamp);
+  g(7);
+  d();
+  g(5);
+  c("** APPOINTMENT CONFIRMED **", 7.5, true, "#000");
+  g(3);
+  c("Please carry this receipt", 7, false, "#888");
+  g(8);
 
   return L;
 }
 
-// Measure line height for canvas pre-sizing (no actual drawing)
-function measureLineH(l) {
-  if (l.type === "gap")    return l.h || 6;
-  if (l.type === "dash")   return 10;
-  if (l.type === "center") return (l.size || 9) * 1.55;
-  if (l.type === "row")    return 26;
-  return 10;
+function measureH(l) {
+  if (l.t === "gap")  return l.h || 5;
+  if (l.t === "dash") return 9;
+  if (l.t === "c")    return (l.sz || 9) * 1.6;
+  if (l.t === "row")  return 22;
+  return 9;
 }
 
-// Draw one line, returns new y
-function drawReceiptLine(ctx, l, y, W, PAD) {
+function drawLine(ctx, l, y, W, PAD) {
   ctx.textBaseline = "top";
 
-  if (l.type === "gap") return y + (l.h || 6);
+  if (l.t === "gap") return y + (l.h || 5);
 
-  if (l.type === "dash") {
-    ctx.font      = "8px monospace";
-    ctx.fillStyle = "#bbb";
+  if (l.t === "dash") {
+    ctx.font = "7px monospace";
+    ctx.fillStyle = "#ccc";
     ctx.textAlign = "center";
-    ctx.fillText("- - - - - - - - - - - - - - - - - - - - - - - -", W / 2, y);
-    return y + 10;
+    ctx.fillText("- - - - - - - - - - - - - - - - - - - - - - -", W/2, y);
+    return y + 9;
   }
 
-  if (l.type === "center") {
-    const fnt = (l.bold ? "bold " : "") + l.size + "px 'Courier New',monospace";
-    ctx.font      = fnt;
-    ctx.fillStyle = l.color || "#222";
+  if (l.t === "c") {
+    ctx.font      = (l.bold ? "bold " : "") + l.sz + "px 'Courier New',monospace";
+    ctx.fillStyle = l.col || "#222";
     ctx.textAlign = "center";
-
-    // Word-wrap
-    const words = String(l.text).split(" ");
+    // Word wrap
+    const words = String(l.txt).split(" ");
     let line = "", ly = y;
-    const lineH = l.size * 1.35;
+    const lh = l.sz * 1.3;
     for (const w of words) {
-      const test = line ? line + " " + w : w;
-      if (ctx.measureText(test).width > W - PAD * 2 && line) {
-        ctx.fillText(line, W / 2, ly);
-        line = w; ly += lineH;
+      const test = line ? line+" "+w : w;
+      if (ctx.measureText(test).width > W - PAD*2 && line) {
+        ctx.fillText(line, W/2, ly);
+        line = w; ly += lh;
       } else line = test;
     }
-    ctx.fillText(line, W / 2, ly);
-    return ly + l.size * 1.55;
+    ctx.fillText(line, W/2, ly);
+    return ly + l.sz * 1.6;
   }
 
-  if (l.type === "row") {
-    // Label on the left, value right-aligned with wrapping
-    const labelW = 56;
-    const valX   = PAD + labelW + 4;
+  if (l.t === "row") {
+    const valX    = PAD + 52;
     const valMaxW = W - PAD - valX;
 
-    ctx.font      = "bold 8px 'Courier New',monospace";
+    ctx.font      = "bold 7px 'Courier New',monospace";
     ctx.fillStyle = "#666";
     ctx.textAlign = "left";
-    ctx.fillText(l.label, PAD, y);
+    ctx.fillText(l.lbl, PAD, y);
 
-    ctx.font      = "8px 'Courier New',monospace";
+    ctx.font      = "7px 'Courier New',monospace";
     ctx.fillStyle = "#111";
-
-    const words = String(l.value || "").split(" ");
+    const words = String(l.val || "").split(" ");
     let ln = "", ly = y;
     for (const w of words) {
-      const test = ln ? ln + " " + w : w;
+      const test = ln ? ln+" "+w : w;
       if (ctx.measureText(test).width > valMaxW && ln) {
-        ctx.textAlign = "right";
-        ctx.fillText(ln, W - PAD, ly);
-        ln = w; ly += 11;
+        ctx.textAlign = "right"; ctx.fillText(ln, W-PAD, ly);
+        ln = w; ly += 10;
       } else ln = test;
     }
-    ctx.textAlign = "right";
-    ctx.fillText(ln, W - PAD, ly);
-    return Math.max(y + 14, ly + 12);
+    ctx.textAlign = "right"; ctx.fillText(ln, W-PAD, ly);
+    return Math.max(y + 13, ly + 10);
   }
 
   return y;
 }
 
-// ── STATE MACHINE ─────────────────────────────────────────────────
+// ── STATE MACHINE ────────────────────────────────────────────────
 function setState(s) {
   bookingState   = s;
   $btn.disabled  = true;
-  $btn.className = "";   // reset all state classes
+  $btn.className = "";
 
   switch(s) {
     case "idle":
       $btn.innerText = "Book Appointment";
       break;
     case "checking":
-      $btn.innerText = "Checking Appointment…";
+      $btn.innerText = "Checking…";
       $btn.classList.add("chk");
       break;
     case "ready":
@@ -698,19 +694,19 @@ function setState(s) {
       break;
     case "booking":
       $btn.innerText = "Booking…";
-      $btn.classList.add("booking");
+      $btn.classList.add("chk");
       break;
     case "done":
       $btn.innerText = "✓ Appointment Booked";
-      $btn.classList.add("booked");  // green, disabled
+      $btn.classList.add("booked");
       break;
   }
 }
 
-function setStatus(msg, cls) { $status.textContent = msg; $status.className = cls; }
-function clearStatus()       { $status.textContent = ""; $status.className = ""; }
+function setStatus(m, c) { $status.textContent = m; $status.className = c; }
+function clearStatus()    { $status.textContent = ""; $status.className = ""; }
 
-// ── ADMIN ─────────────────────────────────────────────────────────
+// ── ADMIN ────────────────────────────────────────────────────────
 document.getElementById("headerBar").addEventListener("click", () => {
   $adm.value = ""; $adm.style.pointerEvents = "auto"; $adm.focus();
 });
