@@ -173,9 +173,14 @@ const $status  = document.getElementById("statusMsg");
 const $hint    = document.getElementById("phoneHint");
 const $dlBtn   = document.getElementById("downloadBtn");
 
+function hidePreloader() {
+  const el = document.getElementById("preloader");
+  if (el) el.style.display = "none";
+}
+
 // ── INIT ─────────────────────────────────────────────────────────
 window.addEventListener("load", () => {
-  setTimeout(() => { document.getElementById("preloader").style.display = "none"; }, 5000);
+  setTimeout(hidePreloader, 3000); // hard fallback — always hides after 3s
   loadSettings();
 });
 
@@ -194,6 +199,8 @@ async function loadSettings() {
     setupClinics();
   } catch(err) {
     setStatus("Failed to load settings. Please refresh.", "err");
+  } finally {
+    hidePreloader(); // hide as soon as settings are done (or failed)
   }
 }
 
