@@ -137,6 +137,8 @@ let slotLimits     = {};
 // bookingState: idle | checking | ready | duplicate | full | booking | done
 let bookingState   = "idle";
 let checkTimer     = null;
+let slotsAvailable = true;   // set by refreshToken(); guards runCheck()
+let tokenChecking  = false;  // true while refreshToken() is in-flight
 
 const $doctor  = document.getElementById("doctorButtons");
 const $clinic  = document.getElementById("clinicButtons");
@@ -254,17 +256,21 @@ function phoneValid() { return /^\d{10}$/.test($phone.value); }
 
 // ── SELECTION CHANGE (doctor/clinic/date) ────────────────────────
 function onSelChange() {
-  refreshToken();
-  if (bookingState !== "idle" && bookingState !== "full") {
+  // Never disturb a completed booking — message stays until refresh
+  if (bookingState === "done") return;
+  if (bookingState !== "booking") {
     bookingState = "idle";
     clearStatus();
   }
+  refreshToken();
   debounceCheck();
 }
 
 // ── FORM INPUT ───────────────────────────────────────────────────
 function onFormInput() {
-  if (bookingState === "duplicate" || bookingState === "done") {
+  // Never disturb a completed booking — message stays until refresh
+  if (bookingState === "done") return;
+  if (bookingState === "duplicate") {
     bookingState = "idle"; clearStatus();
   }
   debounceCheck();
@@ -278,43 +284,58 @@ function debounceCheck() {
 
 // ── MAIN CHECK ───────────────────────────────────────────────────
 async function runCheck() {
-  if (bookingState === "full" || bookingState === "booking" || bookingState === "done") return;
+  if (bookingState === "booking" || bookingState === "done") return;
+
+  // Wait for token check to finish before proceeding
+  if (tokenChecking) {
+    debounceCheck();
+    return;
+  }
+
+  // Slots full — keep button disabled, nothing to check
+  if (!slotsAvailable) {
+    setState("full");
+    return;
+  }
 
   const allFilled = $name.value.trim() && phoneValid() && $address.value.trim();
-
   if (!allFilled) {
     setState("idle");
     return;
   }
 
-  // All filled → check duplicate
+  // All fields filled → check duplicate
   setState("checking");
 
   try {
     const r = await fetch(
       scriptURL +
       "?action=checkDuplicate" +
+      "&name="   + encodeURIComponent($name.value.trim()) +
       "&phone="  + encodeURIComponent($phone.value.trim()) +
-      "&doctor=" + encodeURIComponent(selectedDoctor) +
       "&clinic=" + encodeURIComponent(selectedClinic) +
       "&date="   + encodeURIComponent($date.value)
     );
     const d = await r.json();
+    // Re-check slots haven't gone full while we were waiting
+    if (!slotsAvailable) { setState("full"); return; }
     if (d.duplicate) {
       setState("duplicate");
-      setStatus("This number already has an appointment for the selected doctor, clinic & date.", "warn");
+      setStatus("An appointment already exists for this name & phone at this clinic on this date.", "warn");
     } else {
       setState("ready");
       clearStatus();
     }
   } catch(e) {
-    setState("ready"); // allow attempt on network error
+    if (!slotsAvailable) { setState("full"); return; }
+    setState("ready");
   }
 }
 
 // ── TOKEN REFRESH ────────────────────────────────────────────────
 async function refreshToken() {
   if (!selectedDoctor || !selectedClinic) return;
+  tokenChecking = true;
   $token.textContent = "Checking availability…";
   $token.className   = "tokenInfo avail";
 
@@ -327,26 +348,34 @@ async function refreshToken() {
       "&date="   + encodeURIComponent($date.value)
     );
     const d = await r.json();
-    const maxTok  = Number(d.maxToken) || 0;
-    const next    = maxTok + 1;
-    const limit   = slotLimits[selectedDoctor + "||" + selectedClinic] || 0;
+    const maxTok = Number(d.maxToken) || 0;
+    const next   = maxTok + 1;
+    const limit  = slotLimits[selectedDoctor + "||" + selectedClinic] || 0;
 
     if (limit > 0 && maxTok >= limit) {
+      // Slots exhausted
+      slotsAvailable = false;
       $token.textContent = "No Booking Available";
       $token.className   = "tokenInfo full";
-      setState("full");
       setStatus("All slots are full for this doctor, clinic & date.", "err");
+      setState("full");
     } else {
+      // Slots available
+      slotsAvailable = true;
       $token.textContent = "Token Available: " + next;
       $token.className   = "tokenInfo avail";
       if (bookingState === "full") {
         bookingState = "idle";
         clearStatus();
-        debounceCheck();
       }
     }
   } catch(e) {
+    slotsAvailable = true; // fail open so user can still try
     $token.textContent = "Token: —";
+  } finally {
+    tokenChecking = false;
+    // After token result is known, re-run the duplicate/button check
+    debounceCheck();
   }
 }
 
@@ -373,19 +402,13 @@ $btn.addEventListener("click", async () => {
     if (d.status === "success") {
       setState("done");
       setStatus(
-        "✓ Booked! Token: " + d.token +
-        " | " + selectedDoctor +
-        " | " + selectedClinic +
-        " | " + $date.value,
+        "✓ Appointment Booked! Token: " + d.token +
+        " | Doctor: " + selectedDoctor +
+        " | Clinic: " + selectedClinic +
+        " | Date: " + $date.value,
         "success"
       );
-      setTimeout(() => {
-        $name.value = ""; $phone.value = ""; $address.value = "";
-        $hint.textContent = "Enter 10-digit number"; $hint.className = "phone-hint";
-        $phone.classList.remove("err");
-        bookingState = "idle"; clearStatus(); setState("idle");
-        refreshToken();
-      }, 3500);
+      // Message stays until page is manually refreshed
 
     } else if (d.status === "duplicate") {
       setState("duplicate");
