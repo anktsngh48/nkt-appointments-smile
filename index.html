@@ -20,15 +20,18 @@ display:flex;
 justify-content:center;
 align-items:center;
 text-align:center;
-padding:20px;
 }
 
 #preloader p{
+max-width:420px;
+margin:auto;
 font-size:18px;
 font-weight:700;
 color:#007bff;
-line-height:1.5;
+line-height:1.6;
 }
+
+/* BODY */
 
 body{
 font-family:Segoe UI;
@@ -53,6 +56,8 @@ font-weight:400;
 margin-top:3px;
 }
 
+/* CONTAINER */
+
 .container{
 padding:20px;
 max-width:600px;
@@ -66,11 +71,15 @@ border-radius:12px;
 box-shadow:0 6px 18px rgba(0,0,0,0.08);
 }
 
+/* LABEL */
+
 label{
 font-weight:600;
 display:block;
 margin-top:15px;
 }
+
+/* DOCTOR */
 
 .doctorSection{
 display:flex;
@@ -84,31 +93,37 @@ flex:1;
 display:flex;
 flex-wrap:wrap;
 gap:8px;
+align-content:flex-start;
 }
 
 .doctorButtons button{
+
+width:120px;
+height:60px;
+
 border:1px solid #007bff;
 background:white;
-border-radius:6px;
-padding:6px 8px;
+
+border-radius:8px;
+
 cursor:pointer;
-font-size:12px;
-color:black;
-text-align:left;
+
+display:flex;
+flex-direction:column;
+justify-content:center;
+align-items:center;
+
+text-align:center;
+
+font-size:13px;
 }
 
 .doctorButtons button span{
-display:block;
-font-size:10px;
-color:#444;
+font-size:11px;
 }
 
 .doctorButtons button.selected{
 background:#007bff;
-color:white;
-}
-
-.doctorButtons button.selected span{
 color:white;
 }
 
@@ -119,6 +134,8 @@ object-fit:cover;
 border-radius:6px;
 display:none;
 }
+
+/* CLINICS */
 
 .clinicButtons{
 display:flex;
@@ -131,16 +148,17 @@ margin-top:6px;
 border:1px solid #007bff;
 background:white;
 border-radius:6px;
-padding:8px 10px;
+padding:8px 12px;
 font-size:13px;
 cursor:pointer;
-color:black;
 }
 
 .clinicButtons button.selected{
 background:#007bff;
 color:white;
 }
+
+/* INPUT */
 
 input,select{
 width:100%;
@@ -151,6 +169,8 @@ border:1px solid #ddd;
 font-size:15px;
 box-sizing:border-box;
 }
+
+/* BUTTON */
 
 #bookBtn{
 width:100%;
@@ -168,6 +188,8 @@ cursor:pointer;
 background:#ccc;
 }
 
+/* TOKEN */
+
 .tokenInfo{
 margin-top:15px;
 font-weight:bold;
@@ -176,14 +198,13 @@ text-align:center;
 }
 
 .hiddenInput{
-position:absolute;
 opacity:0;
+position:absolute;
 height:0;
 width:0;
 }
 
 </style>
-
 </head>
 
 <body>
@@ -203,6 +224,7 @@ Smile Dental Hospital
 <input type="password" id="adminInput" class="hiddenInput">
 
 <div class="container">
+
 <div class="card">
 
 <label>Doctor</label>
@@ -231,7 +253,7 @@ Smile Dental Hospital
 <select id="dateSelect"></select>
 
 <div class="tokenInfo" id="tokenAvailable">
-Token: 1
+Token Available: 1
 </div>
 
 <button id="bookBtn" disabled>
@@ -243,12 +265,13 @@ Book Appointment
 
 <script>
 
-const scriptURL="https://script.google.com/macros/s/AKfycby6hVR6u3QCODIrQ8lRybb4AusvejbUxaLPLs4rt8LiQs1YJKVvQ4LqvlwKTBshH-VjOA/exec";
+const scriptURL="PASTE_WEBAPP_URL";
 
 let settingsData=[];
 let selectedDoctor="";
 let selectedClinic="";
 let adminPassword="";
+let bookingState="idle";
 
 const doctorButtons=document.getElementById("doctorButtons");
 const clinicButtons=document.getElementById("clinicButtons");
@@ -264,8 +287,6 @@ const bookBtn=document.getElementById("bookBtn");
 const headerAddress=document.getElementById("headerAddress");
 
 const adminInput=document.getElementById("adminInput");
-
-let readyToBook=false;
 
 window.addEventListener("load",function(){
 
@@ -315,6 +336,7 @@ Array.from(doctorButtons.children).forEach(b=>b.classList.remove("selected"));
 btn.classList.add("selected");
 
 updateToken();
+checkInputs();
 
 };
 
@@ -345,6 +367,7 @@ Array.from(clinicButtons.children).forEach(b=>b.classList.remove("selected"));
 btn.classList.add("selected");
 
 updateToken();
+checkInputs();
 
 };
 
@@ -377,7 +400,9 @@ dateSelect.onchange=updateToken;
 }
 
 function formatDate(d){
+
 return String(d.getDate()).padStart(2,'0')+"-"+String(d.getMonth()+1).padStart(2,'0')+"-"+d.getFullYear();
+
 }
 
 async function updateToken(){
@@ -390,9 +415,7 @@ const res=await fetch(scriptURL+"?action=getToken&doctor="+selectedDoctor+"&clin
 
 const data=await res.json();
 
-tokenAvailable.innerText="Token: "+data.token;
-
-checkInputs();
+tokenAvailable.innerText="Token Available: "+data.token;
 
 }
 
@@ -402,11 +425,14 @@ async function checkInputs(){
 
 if(!(userName.value && userPhone.value && userAddress.value)){
 bookBtn.disabled=true;
+bookBtn.innerText="Book Appointment";
+bookingState="idle";
 return;
 }
 
-bookBtn.innerText="Checking Appointment";
 bookBtn.disabled=true;
+bookBtn.innerText="Checking Appointment";
+bookingState="checking";
 
 const date=dateSelect.value;
 
@@ -418,13 +444,13 @@ if(data.duplicate){
 
 bookBtn.innerText="Duplicate Appointment";
 bookBtn.disabled=true;
-readyToBook=false;
+bookingState="duplicate";
 
 }else{
 
 bookBtn.innerText="Book Appointment";
 bookBtn.disabled=false;
-readyToBook=true;
+bookingState="ready";
 
 }
 
@@ -432,7 +458,7 @@ readyToBook=true;
 
 bookBtn.onclick=async()=>{
 
-if(!readyToBook) return;
+if(bookingState!=="ready") return;
 
 const payload={
 name:userName.value,
@@ -450,16 +476,9 @@ body:JSON.stringify(payload)
 
 const data=await res.json();
 
-if(data.status==="success"){
-
 alert("Appointment booked. Token: "+data.token);
+
 location.reload();
-
-}else{
-
-alert("Error");
-
-}
 
 };
 
