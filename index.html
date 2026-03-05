@@ -1,354 +1,361 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="UTF-8">
-
-<title>NKT Appointment</title>
-
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smile Dental Hospital</title>
 <style>
-
-body{
-font-family:Arial;
-margin:0;
-padding:0;
-background:#ffffff;
+#preloader{
+position:fixed;
+top:0;left:0;width:100%;height:100%;
+background:#f4f6f9;z-index:9999;
+display:flex;justify-content:center;align-items:center;text-align:center;
 }
-
-#topHeader{
-background:#d32f2f;
-color:white;
-text-align:center;
-font-size:20px;
-padding:12px;
-font-weight:bold;
-cursor:pointer;
+#preloader p{
+max-width:420px;margin:auto;font-size:18px;font-weight:700;
+color:#007bff;line-height:1.6;
 }
-
-#container{
-padding:16px;
+body{font-family:Segoe UI;margin:0;background:#f4f6f9;}
+.header{
+background:#007bff;color:white;padding:18px;
+text-align:center;font-size:22px;font-weight:600;cursor:pointer;
+user-select:none;
 }
-
-#doctorImage{
-width:100%;
-max-width:320px;
-display:none;
-margin:auto;
-margin-bottom:10px;
+.header span{display:block;font-size:14px;font-weight:400;margin-top:3px;}
+.container{padding:20px;max-width:600px;margin:auto;}
+.card{background:white;padding:25px;border-radius:12px;box-shadow:0 6px 18px rgba(0,0,0,0.08);}
+label{font-weight:600;display:block;margin-top:15px;}
+.doctorSection{display:flex;align-items:flex-start;gap:12px;margin-top:4px;}
+.doctorButtons{flex:1;display:flex;flex-wrap:wrap;gap:8px;align-content:flex-start;}
+.doctorButtons button{
+width:120px;height:60px;border:1px solid #007bff;background:white;
+border-radius:8px;cursor:pointer;display:flex;flex-direction:column;
+justify-content:center;align-items:center;text-align:center;font-size:13px;
 }
-
-.doctorButtons{
-display:flex;
-flex-direction:column;
-gap:10px;
+.doctorButtons button span{font-size:11px;}
+.doctorButtons button.selected{background:#007bff;color:white;}
+#doctorImage{width:100px;height:130px;object-fit:cover;border-radius:6px;display:none;}
+.clinicButtons{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;}
+.clinicButtons button{
+border:1px solid #007bff;background:white;border-radius:6px;
+padding:8px 12px;font-size:13px;cursor:pointer;
 }
-
-.doctorBtn{
-background:#f44336;
-color:white;
-border:none;
-border-radius:6px;
-font-size:16px;
-padding:10px;
-width:100%;
-cursor:pointer;
-display:flex;
-align-items:center;
-justify-content:center;
+.clinicButtons button.selected{background:#007bff;color:white;}
+input,select{
+width:100%;padding:12px;margin-top:6px;border-radius:8px;
+border:1px solid #ddd;font-size:15px;box-sizing:border-box;
 }
-
-select,input{
-width:100%;
-padding:10px;
-margin-top:10px;
-font-size:15px;
-border-radius:6px;
-border:1px solid #ccc;
-box-sizing:border-box;
-}
-
-#tokenBox{
-margin-top:14px;
-font-size:16px;
-font-weight:bold;
-}
-
 #bookBtn{
-margin-top:14px;
-width:100%;
-padding:12px;
-font-size:16px;
-background:#f44336;
-color:white;
-border:none;
-border-radius:6px;
-cursor:pointer;
-opacity:.5;
+width:100%;padding:14px;margin-top:20px;border-radius:8px;
+border:none;background:#28a745;color:white;font-size:15px;cursor:pointer;
 }
-
-#bookBtn.enabled{
-opacity:1;
-}
-
+#bookBtn:disabled{background:#ccc;cursor:not-allowed;}
+.tokenInfo{margin-top:15px;font-weight:bold;color:#007bff;text-align:center;}
+.hiddenInput{opacity:0;position:fixed;top:-9999px;left:-9999px;height:1px;width:1px;}
 </style>
-
 </head>
-
 <body>
 
-<div id="topHeader">|| ॐ त्र्यम्बकं यजामहे सुगन्धिं पुष्टिवर्धनम् ||</div>
-
-<div id="container">
-
-<img id="doctorImage">
-
-<div class="doctorButtons" id="doctorButtons"></div>
-
-<select id="clinic"></select>
-
-<select id="date"></select>
-
-<input id="name" placeholder="Name">
-
-<input id="phone" placeholder="Phone">
-
-<input id="address" placeholder="Address">
-
-<div id="tokenBox">Token Available: </div>
-
-<button id="bookBtn" disabled>Book Appointment</button>
-
+<div id="preloader">
+<p>
+नित्यमध्मान तां तांस्तु व्याधिभिश्च विवर्जितः।<br>
+रसैश्च दन्तमूलानां रूक्षैराचाम्य विक्रियाम्॥
+</p>
 </div>
 
-<input type="password" id="adminPass" style="position:absolute;left:-9999px">
+<div class="header" id="headerBar">
+Smile Dental Hospital
+<span id="headerAddress"></span>
+</div>
+
+<!-- Hidden admin input, rendered off-screen but focusable -->
+<input type="password" id="adminInput" class="hiddenInput" autocomplete="off">
+
+<div class="container">
+<div class="card">
+<label>Doctor</label>
+<div class="doctorSection">
+<div class="doctorButtons" id="doctorButtons"></div>
+<img id="doctorImage" alt="Doctor">
+</div>
+
+<label>Clinic</label>
+<div class="clinicButtons" id="clinicButtons"></div>
+
+<label>Name</label>
+<input id="userName" type="text" placeholder="Full Name">
+
+<label>Phone</label>
+<input id="userPhone" type="tel" placeholder="Mobile Number">
+
+<label>Address</label>
+<input id="userAddress" type="text" placeholder="Your Address">
+
+<label>Date</label>
+<select id="dateSelect"></select>
+
+<div class="tokenInfo" id="tokenAvailable">Token Available: —</div>
+
+<button id="bookBtn" disabled>Book Appointment</button>
+</div>
+</div>
 
 <script>
+// ── PASTE YOUR DEPLOYED WEB APP URL BELOW ──
+const scriptURL = "https://script.google.com/macros/s/AKfycby6hVR6u3QCODIrQ8lRybb4AusvejbUxaLPLs4rt8LiQs1YJKVvQ4LqvlwKTBshH-VjOA/exec";
+// ───────────────────────────────────────────
 
-const SCRIPT_URL="https://script.google.com/macros/s/AKfycby6hVR6u3QCODIrQ8lRybb4AusvejbUxaLPLs4rt8LiQs1YJKVvQ4LqvlwKTBshH-VjOA/exec";
+let settingsData = [];
+let selectedDoctor = "";
+let selectedClinic = "";
+let adminPassword = "";
+let slotLimits = {};   // key: "Doctor||Clinic" → limit number
+let bookingState = "idle";
 
-let settings=[];
-let appointments=[];
-let selectedDoctor="";
-let slotLimit=0;
+const doctorButtonsDiv = document.getElementById("doctorButtons");
+const clinicButtonsDiv = document.getElementById("clinicButtons");
+const doctorImage      = document.getElementById("doctorImage");
+const userName         = document.getElementById("userName");
+const userPhone        = document.getElementById("userPhone");
+const userAddress      = document.getElementById("userAddress");
+const dateSelect       = document.getElementById("dateSelect");
+const tokenAvailable   = document.getElementById("tokenAvailable");
+const bookBtn          = document.getElementById("bookBtn");
+const headerAddress    = document.getElementById("headerAddress");
+const adminInput       = document.getElementById("adminInput");
 
-async function init(){
-
-let res=await fetch(SCRIPT_URL+"?action=getData");
-let data=await res.json();
-
-settings=data.settings;
-appointments=data.appointments;
-
-loadDoctors();
-loadClinics();
-loadDates();
-
-checkToken();
-
-}
-
-function loadDoctors(){
-
-let div=document.getElementById("doctorButtons");
-div.innerHTML="";
-
-settings.forEach((r,i)=>{
-
-let btn=document.createElement("button");
-btn.className="doctorBtn";
-btn.innerText=r[0];
-
-btn.onclick=()=>{
-selectedDoctor=r[0];
-slotLimit=r[3];
-showDoctorImage(r[4]);
-checkToken();
-validateForm();
-};
-
-div.appendChild(btn);
-
-if(i===0){
-selectedDoctor=r[0];
-slotLimit=r[3];
-showDoctorImage(r[4]);
-}
-
+// ── INIT ──────────────────────────────────────────────────────────────────────
+window.addEventListener("load", () => {
+  setTimeout(() => {
+    document.getElementById("preloader").style.display = "none";
+  }, 5000);
+  loadSettings();
 });
 
+// ── LOAD SETTINGS ─────────────────────────────────────────────────────────────
+async function loadSettings() {
+  try {
+    const res = await fetch(scriptURL + "?action=getSettings");
+    settingsData = await res.json();
+
+    // Parse AdminPassword
+    settingsData.forEach(r => {
+      if (r[0] === "AdminPassword") adminPassword = String(r[1]);
+    });
+
+    // Parse SlotLimits
+    settingsData.forEach(r => {
+      if (r[0] === "SlotLimit") {
+        const key = r[1] + "||" + r[2];
+        slotLimits[key] = Number(r[3]) || 0;
+      }
+    });
+
+    setupDates();
+    setupDoctors();
+    setupClinics();
+  } catch (err) {
+    console.error("Failed to load settings:", err);
+  }
 }
 
-function showDoctorImage(url){
-
-let img=document.getElementById("doctorImage");
-
-if(url){
-img.src=url;
-img.style.display="block";
-}else{
-img.style.display="none";
+// ── DATE SETUP ────────────────────────────────────────────────────────────────
+function setupDates() {
+  const today    = new Date();
+  const tomorrow = new Date(today.getTime() + 86400000);
+  [today, tomorrow].forEach(d => {
+    const opt   = document.createElement("option");
+    opt.value   = formatDate(d);
+    opt.text    = opt.value;
+    dateSelect.appendChild(opt);
+  });
+  dateSelect.addEventListener("change", () => updateToken());
 }
 
+function formatDate(d) {
+  return String(d.getDate()).padStart(2, "0") + "-" +
+         String(d.getMonth() + 1).padStart(2, "0") + "-" +
+         d.getFullYear();
 }
 
-function loadClinics(){
+// ── DOCTOR SETUP ──────────────────────────────────────────────────────────────
+function setupDoctors() {
+  const doctors = settingsData.filter(r => r[0] === "Doctor");
+  doctors.forEach((d, i) => {
+    const btn = document.createElement("button");
+    btn.innerHTML = d[1] + "<span>" + (d[4] || "") + "</span>";
+    btn.addEventListener("click", () => {
+      selectedDoctor = d[1];
+      doctorImage.src = d[2] || "";
+      doctorImage.style.display = d[2] ? "block" : "none";
+      Array.from(doctorButtonsDiv.children).forEach(b => b.classList.remove("selected"));
+      btn.classList.add("selected");
+      updateToken();
+      checkInputs();
+    });
+    doctorButtonsDiv.appendChild(btn);
+    if (i === 0) btn.click();   // default: first doctor
+  });
+}
 
-let sel=document.getElementById("clinic");
-sel.innerHTML="";
+// ── CLINIC SETUP ──────────────────────────────────────────────────────────────
+function setupClinics() {
+  const clinics = settingsData.filter(r => r[0] === "Clinic");
+  clinics.forEach((c, i) => {
+    const btn = document.createElement("button");
+    btn.innerText = c[1];
+    btn.addEventListener("click", () => {
+      selectedClinic = c[1];
+      headerAddress.innerText = c[2] || "";
+      Array.from(clinicButtonsDiv.children).forEach(b => b.classList.remove("selected"));
+      btn.classList.add("selected");
+      updateToken();
+      checkInputs();
+    });
+    clinicButtonsDiv.appendChild(btn);
+    if (i === 0) btn.click();   // default: first clinic
+  });
+}
 
-let clinics=[...new Set(settings.map(r=>r[1]))];
+// ── TOKEN UPDATE ──────────────────────────────────────────────────────────────
+async function updateToken() {
+  if (!selectedDoctor || !selectedClinic) return;
+  const date = dateSelect.value;
+  try {
+    const res  = await fetch(scriptURL + "?action=getToken&doctor=" + encodeURIComponent(selectedDoctor) +
+                             "&clinic=" + encodeURIComponent(selectedClinic) + "&date=" + encodeURIComponent(date));
+    const data = await res.json();
+    const maxToken  = data.maxToken;   // highest existing token
+    const nextToken = data.token;      // maxToken + 1
+    const limitKey  = selectedDoctor + "||" + selectedClinic;
+    const limit     = slotLimits[limitKey] || 0;
 
-clinics.forEach(c=>{
-let op=document.createElement("option");
-op.value=c;
-op.text=c;
-sel.appendChild(op);
+    if (limit > 0 && maxToken >= limit) {
+      tokenAvailable.innerText = "No Booking Available";
+      tokenAvailable.style.color = "#dc3545";
+      bookBtn.disabled   = true;
+      bookBtn.innerText  = "No Slots Available";
+      bookingState = "full";
+    } else {
+      tokenAvailable.innerText = "Token Available: " + nextToken;
+      tokenAvailable.style.color = "#007bff";
+      // re-enable check only if form was previously ready
+      if (bookingState === "full") {
+        bookingState = "idle";
+        checkInputs();
+      }
+    }
+  } catch (err) {
+    console.error("Token fetch error:", err);
+  }
+}
+
+// ── FORM INPUT CHECK ──────────────────────────────────────────────────────────
+[userName, userPhone, userAddress].forEach(el => el.addEventListener("input", checkInputs));
+
+async function checkInputs() {
+  if (bookingState === "full") return;
+
+  if (!userName.value.trim() || !userPhone.value.trim() || !userAddress.value.trim()) {
+    bookBtn.disabled  = true;
+    bookBtn.innerText = "Book Appointment";
+    bookingState = "idle";
+    return;
+  }
+
+  // Fields filled — check duplicate
+  bookBtn.disabled  = true;
+  bookBtn.innerText = "Checking Appointment…";
+  bookingState = "checking";
+
+  const date = dateSelect.value;
+  try {
+    const res  = await fetch(scriptURL +
+      "?action=checkDuplicate" +
+      "&phone="  + encodeURIComponent(userPhone.value.trim()) +
+      "&doctor=" + encodeURIComponent(selectedDoctor) +
+      "&clinic=" + encodeURIComponent(selectedClinic) +
+      "&date="   + encodeURIComponent(date));
+    const data = await res.json();
+
+    if (data.duplicate) {
+      bookBtn.innerText = "Duplicate Appointment";
+      bookBtn.disabled  = true;
+      bookingState = "duplicate";
+    } else {
+      bookBtn.innerText = "Book Appointment";
+      bookBtn.disabled  = false;
+      bookingState = "ready";
+    }
+  } catch (err) {
+    bookBtn.innerText = "Book Appointment";
+    bookBtn.disabled  = false;
+    bookingState = "ready";
+  }
+}
+
+// ── BOOK APPOINTMENT ──────────────────────────────────────────────────────────
+bookBtn.addEventListener("click", async () => {
+  if (bookingState !== "ready") return;
+
+  bookBtn.disabled  = true;
+  bookBtn.innerText = "Booking…";
+  bookingState = "booking";
+
+  const payload = {
+    name:    userName.value.trim(),
+    phone:   userPhone.value.trim(),
+    doctor:  selectedDoctor,
+    clinic:  selectedClinic,
+    address: userAddress.value.trim(),
+    date:    dateSelect.value
+  };
+
+  try {
+    const res  = await fetch(scriptURL, {
+      method: "POST",
+      body:   JSON.stringify(payload)
+    });
+    const data = await res.json();
+
+    if (data.status === "success") {
+      alert("✅ Appointment booked!\nToken Number: " + data.token +
+            "\nDoctor: " + selectedDoctor +
+            "\nClinic: " + selectedClinic +
+            "\nDate: " + dateSelect.value);
+      location.reload();
+    } else if (data.status === "duplicate") {
+      alert("⚠️ Duplicate appointment detected. This phone number already has an appointment for the selected doctor, clinic, and date.");
+      bookBtn.innerText = "Duplicate Appointment";
+      bookingState = "duplicate";
+    } else if (data.status === "full") {
+      alert("⚠️ Sorry, all slots are full for the selected doctor, clinic, and date.");
+      bookBtn.innerText = "No Slots Available";
+      bookingState = "full";
+    } else {
+      alert("❌ Server error. Please try again.");
+      bookBtn.disabled  = false;
+      bookBtn.innerText = "Book Appointment";
+      bookingState = "ready";
+    }
+  } catch (err) {
+    alert("❌ Network error. Please check your connection and try again.");
+    bookBtn.disabled  = false;
+    bookBtn.innerText = "Book Appointment";
+    bookingState = "ready";
+  }
 });
 
-}
-
-function loadDates(){
-
-let sel=document.getElementById("date");
-sel.innerHTML="";
-
-let dates=[...new Set(settings.map(r=>r[2]))];
-
-dates.forEach(d=>{
-let op=document.createElement("option");
-op.value=d;
-op.text=d;
-sel.appendChild(op);
+// ── ADMIN PASSWORD (header tap) ───────────────────────────────────────────────
+document.getElementById("headerBar").addEventListener("click", () => {
+  adminInput.value = "";
+  adminInput.focus();
 });
 
-}
-
-function validateForm(){
-
-let name=document.getElementById("name").value.trim();
-let phone=document.getElementById("phone").value.trim();
-let address=document.getElementById("address").value.trim();
-
-let btn=document.getElementById("bookBtn");
-
-if(name && phone.length===10 && address){
-btn.disabled=false;
-btn.classList.add("enabled");
-}else{
-btn.disabled=true;
-btn.classList.remove("enabled");
-}
-
-}
-
-document.getElementById("phone").addEventListener("input",function(){
-
-this.value=this.value.replace(/\D/g,"").slice(0,10);
-
-validateForm();
-
+adminInput.addEventListener("input", () => {
+  if (adminPassword && adminInput.value === adminPassword) {
+    window.location.href = "https://duckduckgo.com";
+  }
 });
-
-document.getElementById("name").addEventListener("input",validateForm);
-document.getElementById("address").addEventListener("input",validateForm);
-
-document.getElementById("clinic").addEventListener("change",checkToken);
-document.getElementById("date").addEventListener("change",checkToken);
-
-function checkToken(){
-
-let clinic=document.getElementById("clinic").value;
-let date=document.getElementById("date").value;
-
-let max=0;
-
-appointments.forEach(r=>{
-
-if(r[1]==selectedDoctor && r[2]==clinic && r[3]==date){
-
-let t=parseInt(r[4]);
-if(t>max)max=t;
-
-}
-
-});
-
-let token=max+1;
-
-document.getElementById("tokenBox").innerText="Token Available: "+token;
-
-}
-
-document.getElementById("bookBtn").onclick=async function(){
-
-let btn=this;
-
-btn.innerText="Checking Appointment";
-btn.disabled=true;
-
-let name=document.getElementById("name").value;
-let phone=document.getElementById("phone").value;
-let address=document.getElementById("address").value;
-let clinic=document.getElementById("clinic").value;
-let date=document.getElementById("date").value;
-
-let res=await fetch(SCRIPT_URL+"?action=checkDuplicate&phone="+phone+"&date="+date);
-
-let data=await res.json();
-
-if(data.duplicate){
-
-alert("Duplicate Entry");
-
-btn.innerText="Book Appointment";
-validateForm();
-
-return;
-
-}
-
-await fetch(SCRIPT_URL+"?action=book&name="+name+"&phone="+phone+"&address="+address+"&doctor="+selectedDoctor+"&clinic="+clinic+"&date="+date);
-
-btn.innerText="Booked";
-
-}
-
-document.getElementById("topHeader").onclick=function(){
-
-let input=document.getElementById("adminPass");
-
-input.style.left="0";
-input.focus();
-
-}
-
-document.getElementById("adminPass").addEventListener("keydown",function(e){
-
-if(e.key==="Enter"){
-
-let pass=this.value;
-
-this.value="";
-this.style.left="-9999px";
-
-document.activeElement.blur();
-
-fetch(SCRIPT_URL+"?action=checkAdmin&pass="+pass)
-.then(r=>r.json())
-.then(d=>{
-
-if(d.ok){
-window.location="anktsngh48.github.io/nkt-edit-sheet";
-}
-
-});
-
-}
-
-});
-
-init();
-
 </script>
-
 </body>
 </html>
