@@ -1,207 +1,101 @@
 <!DOCTYPE html>
 <html>
 <head>
-
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>Smile Dental Hospital</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
 <style>
 
-#preloader{
-position:fixed;
-top:0;
-left:0;
-width:100%;
-height:100%;
-background:#f4f6f9;
-z-index:9999;
-display:flex;
-justify-content:center;
-align-items:center;
-text-align:center;
-}
-
-#preloader p{
-max-width:420px;
-margin:auto;
-font-size:18px;
-font-weight:700;
-color:#007bff;
-line-height:1.6;
-}
-
-/* BODY */
-
 body{
-font-family:Segoe UI;
+font-family: Arial;
 margin:0;
-background:#f4f6f9;
+background:#f6f6f6;
 }
 
-.header{
-background:#007bff;
+#topHeader{
+background:#8B0000;
 color:white;
-padding:18px;
+padding:12px;
 text-align:center;
-font-size:22px;
-font-weight:600;
+font-weight:bold;
 cursor:pointer;
 }
 
-.header span{
-display:block;
+#sanskrit{
+text-align:center;
 font-size:14px;
-font-weight:400;
-margin-top:3px;
-}
-
-/* CONTAINER */
-
-.container{
-padding:20px;
-max-width:600px;
-margin:auto;
-}
-
-.card{
-background:white;
-padding:25px;
-border-radius:12px;
-box-shadow:0 6px 18px rgba(0,0,0,0.08);
-}
-
-/* LABEL */
-
-label{
-font-weight:600;
-display:block;
-margin-top:15px;
-}
-
-/* DOCTOR */
-
-.doctorSection{
-display:flex;
-align-items:flex-start;
-gap:12px;
-margin-top:4px;
-}
-
-.doctorButtons{
-flex:1;
-display:flex;
-flex-wrap:wrap;
-gap:8px;
-align-content:flex-start;
-}
-
-.doctorButtons button{
-
-width:120px;
-height:60px;
-
-border:1px solid #007bff;
-background:white;
-
-border-radius:8px;
-
-cursor:pointer;
-
-display:flex;
-flex-direction:column;
-justify-content:center;
-align-items:center;
-
-text-align:center;
-
-font-size:13px;
-}
-
-.doctorButtons button span{
-font-size:11px;
-}
-
-.doctorButtons button.selected{
-background:#007bff;
-color:white;
-}
-
-#doctorImage{
-width:100px;
-height:130px;
-object-fit:cover;
-border-radius:6px;
-display:none;
-}
-
-/* CLINICS */
-
-.clinicButtons{
-display:flex;
-flex-wrap:wrap;
-gap:6px;
 margin-top:6px;
 }
 
-.clinicButtons button{
-border:1px solid #007bff;
-background:white;
-border-radius:6px;
-padding:8px 12px;
-font-size:13px;
-cursor:pointer;
+.container{
+padding:15px;
 }
 
-.clinicButtons button.selected{
-background:#007bff;
-color:white;
+label{
+display:block;
+margin-top:12px;
+font-weight:bold;
 }
-
-/* INPUT */
 
 input,select{
 width:100%;
-padding:12px;
-margin-top:6px;
-border-radius:8px;
-border:1px solid #ddd;
-font-size:15px;
-box-sizing:border-box;
+padding:10px;
+margin-top:5px;
+border-radius:6px;
+border:1px solid #ccc;
+font-size:16px;
 }
 
-/* BUTTON */
+#doctors{
+display:flex;
+gap:10px;
+margin-top:15px;
+flex-wrap:wrap;
+}
+
+.docBtn{
+flex:1;
+min-width:120px;
+padding:14px;
+border-radius:8px;
+border:none;
+background:#ddd;
+font-weight:bold;
+display:flex;
+align-items:center;
+justify-content:center;
+cursor:pointer;
+}
+
+.docBtn.selected{
+background:#8B0000;
+color:white;
+}
+
+#docImage{
+width:100%;
+margin-top:15px;
+display:none;
+}
+
+#token{
+margin-top:15px;
+font-weight:bold;
+}
 
 #bookBtn{
 width:100%;
 padding:14px;
 margin-top:20px;
-border-radius:8px;
 border:none;
-background:#28a745;
-color:white;
-font-size:15px;
-cursor:pointer;
-}
-
-#bookBtn:disabled{
 background:#ccc;
+color:white;
+font-size:16px;
+border-radius:8px;
 }
 
-/* TOKEN */
-
-.tokenInfo{
-margin-top:15px;
-font-weight:bold;
-color:#007bff;
-text-align:center;
-}
-
-.hiddenInput{
-opacity:0;
-position:absolute;
-height:0;
-width:0;
+#bookBtn.enabled{
+background:#8B0000;
+cursor:pointer;
 }
 
 </style>
@@ -209,288 +103,229 @@ width:0;
 
 <body>
 
-<div id="preloader">
-<p>
-नित्यमध्मान तां तांस्तु व्याधिभिश्च विवर्जितः।<br>
-रसैश्च दन्तमूलानां रूक्षैराचाम्य विक्रियाम्॥
-</p>
-</div>
+<div id="topHeader">NKT Clinic</div>
 
-<div class="header" id="headerBar">
-Smile Dental Hospital
-<span id="headerAddress"></span>
+<div id="sanskrit">
+धर्मो रक्षति रक्षितः
 </div>
-
-<input type="password" id="adminInput" class="hiddenInput">
 
 <div class="container">
 
-<div class="card">
+<div id="doctors"></div>
 
-<label>Doctor</label>
-
-<div class="doctorSection">
-
-<div class="doctorButtons" id="doctorButtons"></div>
-
-<img id="doctorImage">
-
-</div>
-
-<label>Clinic</label>
-<div class="clinicButtons" id="clinicButtons"></div>
+<img id="docImage">
 
 <label>Name</label>
-<input id="userName">
+<input id="name">
 
 <label>Phone</label>
-<input id="userPhone">
+<input id="phone" maxlength="10" inputmode="numeric">
 
 <label>Address</label>
-<input id="userAddress">
+<input id="address">
 
 <label>Date</label>
-<select id="dateSelect"></select>
+<select id="date"></select>
 
-<div class="tokenInfo" id="tokenAvailable">
-Token Available: 1
-</div>
+<div id="token">Token Available: --</div>
 
-<button id="bookBtn" disabled>
-Book Appointment
-</button>
+<button id="bookBtn">Book Appointment</button>
 
-</div>
 </div>
 
 <script>
 
-const scriptURL="https://script.google.com/macros/s/AKfycby6hVR6u3QCODIrQ8lRybb4AusvejbUxaLPLs4rt8LiQs1YJKVvQ4LqvlwKTBshH-VjOA/exec";
+const scriptURL="https://script.google.com/macros/s/AKfycby6hVR6u3QCODIrQ8lRybb4AusvejbUxaLPLs4rt8LiQs1YJKVvQ4LqvlwKTBshH-VjOA/exec"
 
-let settingsData=[];
-let selectedDoctor="";
-let selectedClinic="";
-let adminPassword="";
-let bookingState="idle";
+let selectedDoctor=""
+let checking=false
 
-const doctorButtons=document.getElementById("doctorButtons");
-const clinicButtons=document.getElementById("clinicButtons");
-const doctorImage=document.getElementById("doctorImage");
+document.getElementById("phone").addEventListener("input",function(){
+this.value=this.value.replace(/\D/g,'').slice(0,10)
+checkForm()
+})
 
-const userName=document.getElementById("userName");
-const userPhone=document.getElementById("userPhone");
-const userAddress=document.getElementById("userAddress");
+document.getElementById("name").addEventListener("input",checkForm)
+document.getElementById("address").addEventListener("input",checkForm)
 
-const dateSelect=document.getElementById("dateSelect");
-const tokenAvailable=document.getElementById("tokenAvailable");
-const bookBtn=document.getElementById("bookBtn");
-const headerAddress=document.getElementById("headerAddress");
+document.getElementById("date").addEventListener("change",checkForm)
 
-const adminInput=document.getElementById("adminInput");
+function loadDoctors(){
 
-window.addEventListener("load",function(){
+fetch(scriptURL+"?action=getSettings")
+.then(r=>r.json())
+.then(data=>{
 
-setTimeout(()=>{
-document.getElementById("preloader").style.display="none";
-},5000);
+let doctors=data.doctors
+let container=document.getElementById("doctors")
 
-loadSettings();
-
-});
-
-async function loadSettings(){
-
-const res=await fetch(scriptURL+"?action=getSettings");
-settingsData=await res.json();
-
-settingsData.forEach(r=>{
-if(r[0]==="AdminPassword"){
-adminPassword=r[1];
-}
-});
-
-setupDoctors();
-setupClinics();
-setupDates();
-
-}
-
-function setupDoctors(){
-
-const doctors=settingsData.filter(r=>r[0]==="Doctor");
+container.innerHTML=""
 
 doctors.forEach((d,i)=>{
 
-const btn=document.createElement("button");
-
-btn.innerHTML=d[1]+"<span>"+(d[4]||"")+"</span>";
-
-btn.onclick=()=>{
-
-selectedDoctor=d[1];
-
-doctorImage.src=d[2]||"";
-doctorImage.style.display=d[2]?"block":"none";
-
-Array.from(doctorButtons.children).forEach(b=>b.classList.remove("selected"));
-btn.classList.add("selected");
-
-updateToken();
-checkInputs();
-
-};
-
-doctorButtons.appendChild(btn);
-
-if(i===0)btn.click();
-
-});
-
-}
-
-function setupClinics(){
-
-const clinics=settingsData.filter(r=>r[0]==="Clinic");
-
-clinics.forEach((c,i)=>{
-
-const btn=document.createElement("button");
-
-btn.innerText=c[1];
+let btn=document.createElement("button")
+btn.className="docBtn"
+btn.innerText=d.name
 
 btn.onclick=()=>{
+selectDoctor(d,btn)
+}
 
-selectedClinic=c[1];
-headerAddress.innerText=c[2]||"";
+container.appendChild(btn)
 
-Array.from(clinicButtons.children).forEach(b=>b.classList.remove("selected"));
-btn.classList.add("selected");
+if(i==0){
+btn.click()
+}
 
-updateToken();
-checkInputs();
+})
 
-};
+})
+}
 
-clinicButtons.appendChild(btn);
+function selectDoctor(doc,btn){
 
-if(i===0)btn.click();
+selectedDoctor=doc.name
 
-});
+document.querySelectorAll(".docBtn").forEach(b=>b.classList.remove("selected"))
+btn.classList.add("selected")
+
+if(doc.image){
+let img=document.getElementById("docImage")
+img.src=doc.image
+img.style.display="block"
+}else{
+document.getElementById("docImage").style.display="none"
+}
+
+loadDates()
+checkForm()
+}
+
+function loadDates(){
+
+fetch(scriptURL+"?action=getDates&doctor="+selectedDoctor)
+.then(r=>r.json())
+.then(data=>{
+
+let d=document.getElementById("date")
+d.innerHTML=""
+
+data.forEach((dt,i)=>{
+
+let opt=document.createElement("option")
+opt.value=dt
+opt.innerText=dt
+d.appendChild(opt)
+
+})
+
+d.selectedIndex=0
+
+updateToken()
+
+})
 
 }
 
-function setupDates(){
+function updateToken(){
 
-const today=new Date();
-const tomorrow=new Date(today.getTime()+86400000);
+let date=document.getElementById("date").value
 
-[today,tomorrow].forEach(d=>{
-
-const opt=document.createElement("option");
-
-opt.value=formatDate(d);
-opt.text=opt.value;
-
-dateSelect.appendChild(opt);
-
-});
-
-dateSelect.onchange=updateToken;
+fetch(scriptURL+"?action=getToken&doctor="+selectedDoctor+"&date="+date)
+.then(r=>r.text())
+.then(t=>{
+document.getElementById("token").innerText="Token Available: "+t
+})
 
 }
 
-function formatDate(d){
+function checkForm(){
 
-return String(d.getDate()).padStart(2,'0')+"-"+String(d.getMonth()+1).padStart(2,'0')+"-"+d.getFullYear();
+if(checking) return
 
-}
+let name=document.getElementById("name").value
+let phone=document.getElementById("phone").value
+let addr=document.getElementById("address").value
 
-async function updateToken(){
+let btn=document.getElementById("bookBtn")
 
-if(!selectedDoctor || !selectedClinic) return;
+if(name && phone.length==10 && addr){
 
-const date=dateSelect.value;
-
-const res=await fetch(scriptURL+"?action=getToken&doctor="+selectedDoctor+"&clinic="+selectedClinic+"&date="+date);
-
-const data=await res.json();
-
-tokenAvailable.innerText="Token Available: "+data.token;
-
-}
-
-[userName,userPhone,userAddress].forEach(el=>el.addEventListener("input",checkInputs));
-
-async function checkInputs(){
-
-if(!(userName.value && userPhone.value && userAddress.value)){
-bookBtn.disabled=true;
-bookBtn.innerText="Book Appointment";
-bookingState="idle";
-return;
-}
-
-bookBtn.disabled=true;
-bookBtn.innerText="Checking Appointment";
-bookingState="checking";
-
-const date=dateSelect.value;
-
-const res=await fetch(scriptURL+"?action=checkDuplicate&phone="+userPhone.value+"&doctor="+selectedDoctor+"&clinic="+selectedClinic+"&date="+date);
-
-const data=await res.json();
-
-if(data.duplicate){
-
-bookBtn.innerText="Duplicate Appointment";
-bookBtn.disabled=true;
-bookingState="duplicate";
+btn.classList.add("enabled")
+btn.innerText="Book Appointment"
 
 }else{
 
-bookBtn.innerText="Book Appointment";
-bookBtn.disabled=false;
-bookingState="ready";
+btn.classList.remove("enabled")
+btn.innerText="Book Appointment"
 
 }
 
 }
 
-bookBtn.onclick=async()=>{
+document.getElementById("bookBtn").onclick=function(){
 
-if(bookingState!=="ready") return;
+let btn=this
 
-const payload={
-name:userName.value,
-phone:userPhone.value,
+if(!btn.classList.contains("enabled")) return
+
+checking=true
+btn.innerText="Checking Appointment..."
+
+let data={
+name:document.getElementById("name").value,
+phone:document.getElementById("phone").value,
+address:document.getElementById("address").value,
 doctor:selectedDoctor,
-clinic:selectedClinic,
-address:userAddress.value,
-date:dateSelect.value
-};
-
-const res=await fetch(scriptURL,{
-method:"POST",
-body:JSON.stringify(payload)
-});
-
-const data=await res.json();
-
-alert("Appointment booked. Token: "+data.token);
-
-location.reload();
-
-};
-
-document.getElementById("headerBar").onclick=()=>{
-adminInput.focus();
-};
-
-adminInput.addEventListener("input",()=>{
-if(adminInput.value===adminPassword){
-window.location="https://duckduckgo.com";
+date:document.getElementById("date").value
 }
-});
+
+fetch(scriptURL,{
+method:"POST",
+body:JSON.stringify(data)
+})
+.then(r=>r.text())
+.then(res=>{
+
+checking=false
+
+if(res=="duplicate"){
+
+alert("Duplicate entry found")
+
+btn.innerText="Book Appointment"
+
+}else{
+
+alert("Appointment Booked")
+location.reload()
+
+}
+
+})
+}
+
+document.getElementById("topHeader").onclick=function(){
+
+let pass=prompt("Enter Password")
+
+if(pass){
+
+fetch(scriptURL+"?action=checkPassword&pass="+pass)
+.then(r=>r.text())
+.then(res=>{
+
+if(res.startsWith("http")){
+window.location=res
+}
+
+})
+
+}
+
+}
+
+loadDoctors()
 
 </script>
 
