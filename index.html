@@ -2,7 +2,6 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <title>SMILE Dental Clinic</title>
 
 <style>
@@ -53,15 +52,17 @@ gap:15px;
 flex:1;
 display:flex;
 flex-wrap:wrap;
-gap:8px;
+gap:6px;
 }
 
 .doctorButtons button{
-padding:10px 14px;
+padding:8px 10px;
 border-radius:6px;
 border:1px solid #007bff;
 background:white;
 cursor:pointer;
+font-size:13px;
+color:black;
 }
 
 .doctorButtons button.selected{
@@ -79,26 +80,50 @@ display:none;
 
 #doctorQualifications{
 margin-top:6px;
+font-size:13px;
 font-weight:500;
+}
+
+/* CLINIC BUTTONS */
+
+.clinicButtons{
+display:flex;
+flex-wrap:wrap;
+gap:6px;
+}
+
+.clinicButtons button{
+padding:8px 10px;
+border-radius:6px;
+border:1px solid #007bff;
+background:white;
+cursor:pointer;
+font-size:13px;
+color:black;
+}
+
+.clinicButtons button.selected{
+background:#007bff;
+color:white;
 }
 
 /* INPUTS */
 
 input,select{
 width:100%;
-padding:14px;
+padding:12px;
 margin-top:6px;
-font-size:16px;
+font-size:15px;
 border-radius:8px;
 border:1px solid #ddd;
 box-sizing:border-box;
 }
 
-button{
+button.mainBtn{
 padding:14px;
 width:100%;
 margin-top:20px;
-font-size:16px;
+font-size:15px;
 border-radius:8px;
 border:none;
 cursor:pointer;
@@ -106,7 +131,7 @@ background:#28a745;
 color:white;
 }
 
-button:disabled{
+button.mainBtn:disabled{
 background:#ccc;
 }
 
@@ -134,13 +159,20 @@ SMILE Dental Clinic
 
 <div class="doctorSection">
 
+<div style="flex:1">
+
 <div class="doctorButtons" id="doctorButtons"></div>
+
+<div id="doctorQualifications"></div>
+
+</div>
 
 <img id="doctorImage">
 
 </div>
 
-<div id="doctorQualifications"></div>
+<label>Clinic</label>
+<div class="clinicButtons" id="clinicButtons"></div>
 
 <label>Name</label>
 <input id="userName">
@@ -155,7 +187,7 @@ SMILE Dental Clinic
 Token: 1
 </div>
 
-<button id="bookBtn" disabled>
+<button id="bookBtn" class="mainBtn" disabled>
 Book Appointment
 </button>
 
@@ -171,8 +203,10 @@ const scriptURL="https://script.google.com/macros/s/AKfycby6hVR6u3QCODIrQ8lRybb4
 let settingsData=[];
 let appointmentsData=[];
 let selectedDoctor="";
+let selectedClinic="";
 
-const doctorButtonsContainer=document.getElementById("doctorButtons");
+const doctorButtons=document.getElementById("doctorButtons");
+const clinicButtons=document.getElementById("clinicButtons");
 const doctorImage=document.getElementById("doctorImage");
 const doctorQualifications=document.getElementById("doctorQualifications");
 
@@ -183,19 +217,14 @@ const bookBtn=document.getElementById("bookBtn");
 const tokenAvailable=document.getElementById("tokenAvailable");
 
 
-/* LOAD SETTINGS */
-
 fetch(scriptURL+"?action=getSettings")
 .then(r=>r.json())
 .then(data=>{
-
 settingsData=data;
-
 setupDoctors();
+setupClinics();
 setupDates();
-
 fetchAppointments();
-
 });
 
 
@@ -208,33 +237,63 @@ const doctors=settingsData.filter(r=>r[0]==="Doctor");
 doctors.forEach(d=>{
 
 const btn=document.createElement("button");
-
 btn.innerText=d[1];
 
 btn.onclick=()=>{
 
 selectedDoctor=d[1];
 
-doctorImage.src=d[2] || "";
-doctorImage.style.display=d[2] ? "block":"none";
+doctorImage.src=d[2]||"";
+doctorImage.style.display=d[2]?"block":"none";
 
-doctorQualifications.innerText=d[4] || "";
+doctorQualifications.innerText=d[4]||"";
 
-Array.from(doctorButtonsContainer.children)
-.forEach(b=>b.classList.remove("selected"));
-
+Array.from(doctorButtons.children).forEach(b=>b.classList.remove("selected"));
 btn.classList.add("selected");
 
 checkInputs();
 
 };
 
-doctorButtonsContainer.appendChild(btn);
+doctorButtons.appendChild(btn);
 
 });
 
 if(doctors.length){
-doctorButtonsContainer.children[0].click();
+doctorButtons.children[0].click();
+}
+
+}
+
+
+/* CLINICS */
+
+function setupClinics(){
+
+const clinics=settingsData.filter(r=>r[0]==="Clinic");
+
+clinics.forEach(c=>{
+
+const btn=document.createElement("button");
+btn.innerText=c[1];
+
+btn.onclick=()=>{
+
+selectedClinic=c[1];
+
+Array.from(clinicButtons.children).forEach(b=>b.classList.remove("selected"));
+btn.classList.add("selected");
+
+checkInputs();
+
+};
+
+clinicButtons.appendChild(btn);
+
+});
+
+if(clinics.length){
+clinicButtons.children[0].click();
 }
 
 }
@@ -253,29 +312,22 @@ const dates=[
 ];
 
 dates.forEach(x=>{
-
 const opt=document.createElement("option");
-
 opt.value=x.d;
 opt.text=x.t+" ("+x.d+")";
-
 dateSelect.appendChild(opt);
-
 });
 
 dateSelect.onchange=updateToken;
 
 }
 
-
 function formatDate(d){
-
 return String(d.getDate()).padStart(2,'0')+"-"+String(d.getMonth()+1).padStart(2,'0')+"-"+d.getFullYear();
-
 }
 
 
-/* LOAD APPOINTMENTS */
+/* APPOINTMENTS */
 
 function fetchAppointments(){
 
@@ -288,12 +340,10 @@ appointmentsData=[];
 for(let i=1;i<data.length;i++){
 
 appointmentsData.push({
-
 name:data[i][0],
 phone:data[i][1],
 date:data[i][5],
 token:Number(data[i][6])
-
 });
 
 }
@@ -305,7 +355,7 @@ updateToken();
 }
 
 
-/* TOKEN LOGIC */
+/* TOKEN */
 
 function updateToken(){
 
@@ -314,17 +364,11 @@ const date=dateSelect.value;
 let maxToken=0;
 
 appointmentsData.forEach(a=>{
-
 if(a.date===date){
-
 if(a.token>maxToken){
-
 maxToken=a.token;
-
 }
-
 }
-
 });
 
 tokenAvailable.innerText="Token: "+(maxToken+1);
@@ -343,7 +387,8 @@ function checkInputs(){
 bookBtn.disabled=!(
 userName.value &&
 userPhone.value &&
-selectedDoctor
+selectedDoctor &&
+selectedClinic
 );
 
 }
@@ -358,8 +403,8 @@ const url=scriptURL+
 "&name="+encodeURIComponent(userName.value)+
 "&phone="+encodeURIComponent(userPhone.value)+
 "&doctor="+encodeURIComponent(selectedDoctor)+
-"&clinic=Clinic"+
-"&address=Clinic"+
+"&clinic="+encodeURIComponent(selectedClinic)+
+"&address="+encodeURIComponent(selectedClinic)+
 "&date="+encodeURIComponent(dateSelect.value);
 
 fetch(url)
@@ -367,7 +412,6 @@ fetch(url)
 .then(token=>{
 
 alert("Appointment booked. Token: "+token);
-
 location.reload();
 
 });
