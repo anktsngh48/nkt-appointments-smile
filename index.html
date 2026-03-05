@@ -27,6 +27,7 @@ padding:20px;
 font-size:18px;
 font-weight:700;
 color:#007bff;
+line-height:1.5;
 }
 
 body{
@@ -49,6 +50,7 @@ cursor:pointer;
 display:block;
 font-size:14px;
 font-weight:400;
+margin-top:3px;
 }
 
 .container{
@@ -72,14 +74,16 @@ margin-top:15px;
 
 .doctorSection{
 display:flex;
+align-items:flex-start;
 gap:12px;
+margin-top:4px;
 }
 
 .doctorButtons{
 flex:1;
 display:flex;
 flex-wrap:wrap;
-gap:6px;
+gap:8px;
 }
 
 .doctorButtons button{
@@ -89,16 +93,22 @@ border-radius:6px;
 padding:6px 8px;
 cursor:pointer;
 font-size:12px;
+color:black;
 text-align:left;
 }
 
 .doctorButtons button span{
 display:block;
 font-size:10px;
+color:#444;
 }
 
 .doctorButtons button.selected{
 background:#007bff;
+color:white;
+}
+
+.doctorButtons button.selected span{
 color:white;
 }
 
@@ -114,6 +124,7 @@ display:none;
 display:flex;
 flex-wrap:wrap;
 gap:6px;
+margin-top:6px;
 }
 
 .clinicButtons button{
@@ -123,6 +134,7 @@ border-radius:6px;
 padding:8px 10px;
 font-size:13px;
 cursor:pointer;
+color:black;
 }
 
 .clinicButtons button.selected{
@@ -137,6 +149,7 @@ margin-top:6px;
 border-radius:8px;
 border:1px solid #ddd;
 font-size:15px;
+box-sizing:border-box;
 }
 
 #bookBtn{
@@ -162,6 +175,13 @@ color:#007bff;
 text-align:center;
 }
 
+.hiddenInput{
+position:absolute;
+opacity:0;
+height:0;
+width:0;
+}
+
 </style>
 
 </head>
@@ -170,7 +190,8 @@ text-align:center;
 
 <div id="preloader">
 <p>
-नित्यमध्मान तां तांस्तु व्याधिभिश्च विवर्जितः।
+नित्यमध्मान तां तांस्तु व्याधिभिश्च विवर्जितः।<br>
+रसैश्च दन्तमूलानां रूक्षैराचाम्य विक्रियाम्॥
 </p>
 </div>
 
@@ -178,6 +199,8 @@ text-align:center;
 Smile Dental Hospital
 <span id="headerAddress"></span>
 </div>
+
+<input type="password" id="adminInput" class="hiddenInput">
 
 <div class="container">
 <div class="card">
@@ -193,7 +216,6 @@ Smile Dental Hospital
 </div>
 
 <label>Clinic</label>
-
 <div class="clinicButtons" id="clinicButtons"></div>
 
 <label>Name</label>
@@ -209,7 +231,7 @@ Smile Dental Hospital
 <select id="dateSelect"></select>
 
 <div class="tokenInfo" id="tokenAvailable">
-Token: -
+Token: 1
 </div>
 
 <button id="bookBtn" disabled>
@@ -224,11 +246,9 @@ Book Appointment
 const scriptURL="https://script.google.com/macros/s/AKfycby6hVR6u3QCODIrQ8lRybb4AusvejbUxaLPLs4rt8LiQs1YJKVvQ4LqvlwKTBshH-VjOA/exec";
 
 let settingsData=[];
-let adminPassword="";
-
 let selectedDoctor="";
 let selectedClinic="";
-let selectedClinicAddress="";
+let adminPassword="";
 
 const doctorButtons=document.getElementById("doctorButtons");
 const clinicButtons=document.getElementById("clinicButtons");
@@ -243,15 +263,19 @@ const tokenAvailable=document.getElementById("tokenAvailable");
 const bookBtn=document.getElementById("bookBtn");
 const headerAddress=document.getElementById("headerAddress");
 
-window.onload=()=>{
+const adminInput=document.getElementById("adminInput");
+
+let readyToBook=false;
+
+window.addEventListener("load",function(){
 
 setTimeout(()=>{
 document.getElementById("preloader").style.display="none";
-},2000);
+},5000);
 
 loadSettings();
 
-};
+});
 
 async function loadSettings(){
 
@@ -274,7 +298,7 @@ function setupDoctors(){
 
 const doctors=settingsData.filter(r=>r[0]==="Doctor");
 
-doctors.forEach(d=>{
+doctors.forEach((d,i)=>{
 
 const btn=document.createElement("button");
 
@@ -296,6 +320,8 @@ updateToken();
 
 doctorButtons.appendChild(btn);
 
+if(i===0)btn.click();
+
 });
 
 }
@@ -304,7 +330,7 @@ function setupClinics(){
 
 const clinics=settingsData.filter(r=>r[0]==="Clinic");
 
-clinics.forEach(c=>{
+clinics.forEach((c,i)=>{
 
 const btn=document.createElement("button");
 
@@ -313,9 +339,7 @@ btn.innerText=c[1];
 btn.onclick=()=>{
 
 selectedClinic=c[1];
-selectedClinicAddress=c[2];
-
-headerAddress.innerText=selectedClinicAddress;
+headerAddress.innerText=c[2]||"";
 
 Array.from(clinicButtons.children).forEach(b=>b.classList.remove("selected"));
 btn.classList.add("selected");
@@ -326,6 +350,8 @@ updateToken();
 
 clinicButtons.appendChild(btn);
 
+if(i===0)btn.click();
+
 });
 
 }
@@ -335,9 +361,7 @@ function setupDates(){
 const today=new Date();
 const tomorrow=new Date(today.getTime()+86400000);
 
-const dates=[today,tomorrow];
-
-dates.forEach(d=>{
+[today,tomorrow].forEach(d=>{
 
 const opt=document.createElement("option");
 
@@ -362,7 +386,7 @@ if(!selectedDoctor || !selectedClinic) return;
 
 const date=dateSelect.value;
 
-const res=await fetch(scriptURL+"?action=getToken&doctor="+encodeURIComponent(selectedDoctor)+"&clinic="+encodeURIComponent(selectedClinic)+"&date="+date);
+const res=await fetch(scriptURL+"?action=getToken&doctor="+selectedDoctor+"&clinic="+selectedClinic+"&date="+date);
 
 const data=await res.json();
 
@@ -374,19 +398,41 @@ checkInputs();
 
 [userName,userPhone,userAddress].forEach(el=>el.addEventListener("input",checkInputs));
 
-function checkInputs(){
+async function checkInputs(){
 
-bookBtn.disabled=!(
-userName.value &&
-userPhone.value &&
-userAddress.value &&
-selectedDoctor &&
-selectedClinic
-);
+if(!(userName.value && userPhone.value && userAddress.value)){
+bookBtn.disabled=true;
+return;
+}
+
+bookBtn.innerText="Checking Appointment";
+bookBtn.disabled=true;
+
+const date=dateSelect.value;
+
+const res=await fetch(scriptURL+"?action=checkDuplicate&phone="+userPhone.value+"&doctor="+selectedDoctor+"&clinic="+selectedClinic+"&date="+date);
+
+const data=await res.json();
+
+if(data.duplicate){
+
+bookBtn.innerText="Duplicate Appointment";
+bookBtn.disabled=true;
+readyToBook=false;
+
+}else{
+
+bookBtn.innerText="Book Appointment";
+bookBtn.disabled=false;
+readyToBook=true;
+
+}
 
 }
 
 bookBtn.onclick=async()=>{
+
+if(!readyToBook) return;
 
 const payload={
 name:userName.value,
@@ -404,30 +450,28 @@ body:JSON.stringify(payload)
 
 const data=await res.json();
 
-if(data.status==="duplicate"){
-alert("Duplicate Appointment");
-return;
-}
-
 if(data.status==="success"){
+
 alert("Appointment booked. Token: "+data.token);
 location.reload();
-return;
-}
 
-alert("Server Error");
+}else{
+
+alert("Error");
+
+}
 
 };
 
 document.getElementById("headerBar").onclick=()=>{
+adminInput.focus();
+};
 
-const pass=prompt("Enter Admin Password");
-
-if(pass===adminPassword){
+adminInput.addEventListener("input",()=>{
+if(adminInput.value===adminPassword){
 window.location="https://duckduckgo.com";
 }
-
-};
+});
 
 </script>
 
