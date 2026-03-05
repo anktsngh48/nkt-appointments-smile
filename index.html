@@ -1,133 +1,168 @@
 <!DOCTYPE html>
 <html>
 <head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SMILE Dental Clinic</title>
 
 <style>
 
 body{
-font-family:Arial;
+font-family:Segoe UI;
 margin:0;
-background:#f5f5f5;
+background:#f4f6f9;
+}
+
+.header{
+background:#007bff;
+color:white;
+padding:18px;
+text-align:center;
+font-size:22px;
+font-weight:600;
 }
 
 .container{
-max-width:520px;
+padding:20px;
+max-width:600px;
 margin:auto;
-background:white;
-padding:16px;
 }
 
-h2{
-margin-top:0;
+.card{
+background:white;
+padding:25px;
+border-radius:12px;
+box-shadow:0 6px 18px rgba(0,0,0,0.08);
 }
+
+label{
+font-weight:600;
+margin-top:15px;
+display:block;
+}
+
+/* DOCTOR AREA */
 
 .doctorSection{
 display:flex;
 align-items:flex-start;
-gap:12px;
+gap:15px;
 }
 
-.doctorLeft{
+.doctorButtons{
 flex:1;
+display:flex;
+flex-wrap:wrap;
+gap:8px;
 }
 
-#doctorButtons button{
-display:block;
-width:100%;
-padding:10px;
-margin-bottom:6px;
-border:1px solid #ccc;
+.doctorButtons button{
+padding:10px 14px;
+border-radius:6px;
+border:1px solid #007bff;
 background:white;
 cursor:pointer;
 }
 
-#doctorButtons button.selected{
+.doctorButtons button.selected{
 background:#007bff;
 color:white;
 }
 
-#doctorQualifications{
-font-size:14px;
-margin-top:6px;
-color:#333;
-}
-
-.doctorRight{
-width:110px;
-flex-shrink:0;
-}
-
 #doctorImage{
-width:100%;
+width:100px;
+height:130px;
+object-fit:cover;
 border-radius:6px;
 display:none;
 }
 
-input,button{
+#doctorQualifications{
+margin-top:6px;
+font-weight:500;
+}
+
+/* INPUTS */
+
+input,select{
 width:100%;
-padding:10px;
-margin-top:10px;
+padding:14px;
+margin-top:6px;
+font-size:16px;
+border-radius:8px;
+border:1px solid #ddd;
 box-sizing:border-box;
 }
 
-#tokenAvailable{
-margin-top:10px;
-font-weight:bold;
-font-size:16px;
-}
-
 button{
-background:#007bff;
-color:white;
+padding:14px;
+width:100%;
+margin-top:20px;
+font-size:16px;
+border-radius:8px;
 border:none;
 cursor:pointer;
+background:#28a745;
+color:white;
 }
 
 button:disabled{
-background:#aaa;
+background:#ccc;
+}
+
+.tokenInfo{
+margin-top:15px;
+font-weight:bold;
+color:#007bff;
+text-align:center;
 }
 
 </style>
-
 </head>
 
 <body>
 
+<div class="header">
+SMILE Dental Clinic
+</div>
+
 <div class="container">
 
-<h2>Book Appointment</h2>
+<div class="card">
+
+<label>Doctor</label>
 
 <div class="doctorSection">
 
-<div class="doctorLeft">
-
-<div id="doctorButtons"></div>
-
-<div id="doctorQualifications"></div>
-
-</div>
-
-<div class="doctorRight">
+<div class="doctorButtons" id="doctorButtons"></div>
 
 <img id="doctorImage">
 
 </div>
 
+<div id="doctorQualifications"></div>
+
+<label>Name</label>
+<input id="userName">
+
+<label>Phone</label>
+<input id="userPhone">
+
+<label>Date</label>
+<select id="dateSelect"></select>
+
+<div class="tokenInfo" id="tokenAvailable">
+Token: 1
 </div>
 
-<input type="date" id="dateSelect">
-
-<input type="text" id="nameInput" placeholder="Patient Name">
-
-<input type="tel" id="phoneInput" placeholder="Phone Number">
-
-<div id="tokenAvailable"></div>
-
-<button id="submitBtn" disabled>Submit</button>
+<button id="bookBtn" disabled>
+Book Appointment
+</button>
 
 </div>
+
+</div>
+
 
 <script>
 
@@ -137,90 +172,127 @@ let settingsData=[];
 let appointmentsData=[];
 let selectedDoctor="";
 
-const doctorButtons=document.getElementById("doctorButtons");
-const doctorQualifications=document.getElementById("doctorQualifications");
+const doctorButtonsContainer=document.getElementById("doctorButtons");
 const doctorImage=document.getElementById("doctorImage");
+const doctorQualifications=document.getElementById("doctorQualifications");
 
 const dateSelect=document.getElementById("dateSelect");
-const nameInput=document.getElementById("nameInput");
-const phoneInput=document.getElementById("phoneInput");
-
+const userName=document.getElementById("userName");
+const userPhone=document.getElementById("userPhone");
+const bookBtn=document.getElementById("bookBtn");
 const tokenAvailable=document.getElementById("tokenAvailable");
-const submitBtn=document.getElementById("submitBtn");
 
 
+/* LOAD SETTINGS */
 
-fetch(scriptURL)
+fetch(scriptURL+"?action=getSettings")
 .then(r=>r.json())
 .then(data=>{
-settingsData=data.settings;
+
+settingsData=data;
+
 setupDoctors();
+setupDates();
+
 fetchAppointments();
+
 });
 
 
+/* DOCTORS */
 
 function setupDoctors(){
 
-doctorButtons.innerHTML="";
+const doctors=settingsData.filter(r=>r[0]==="Doctor");
 
-settingsData
-.filter(r=>r[0]==="Doctor")
-.forEach(d=>{
-
-const doctorName=d[1]||"";
-const imageUrl=d[2]||"";
-const qualification=d[3]||"";
+doctors.forEach(d=>{
 
 const btn=document.createElement("button");
-btn.textContent=doctorName;
+
+btn.innerText=d[1];
 
 btn.onclick=()=>{
 
-selectedDoctor=doctorName;
+selectedDoctor=d[1];
 
-doctorQualifications.textContent=qualification;
+doctorImage.src=d[2] || "";
+doctorImage.style.display=d[2] ? "block":"none";
 
-doctorImage.src=imageUrl;
+doctorQualifications.innerText=d[4] || "";
 
-doctorImage.style.display=imageUrl?"block":"none";
+Array.from(doctorButtonsContainer.children)
+.forEach(b=>b.classList.remove("selected"));
 
-Array.from(doctorButtons.children).forEach(b=>b.classList.remove("selected"));
 btn.classList.add("selected");
 
 checkInputs();
 
 };
 
-doctorButtons.appendChild(btn);
+doctorButtonsContainer.appendChild(btn);
 
 });
 
-if(doctorButtons.firstChild){
-doctorButtons.firstChild.click();
+if(doctors.length){
+doctorButtonsContainer.children[0].click();
 }
 
 }
 
 
+/* DATES */
+
+function setupDates(){
+
+const today=new Date();
+const tomorrow=new Date(today.getTime()+86400000);
+
+const dates=[
+{t:"Today",d:formatDate(today)},
+{t:"Tomorrow",d:formatDate(tomorrow)}
+];
+
+dates.forEach(x=>{
+
+const opt=document.createElement("option");
+
+opt.value=x.d;
+opt.text=x.t+" ("+x.d+")";
+
+dateSelect.appendChild(opt);
+
+});
+
+dateSelect.onchange=updateToken;
+
+}
+
+
+function formatDate(d){
+
+return String(d.getDate()).padStart(2,'0')+"-"+String(d.getMonth()+1).padStart(2,'0')+"-"+d.getFullYear();
+
+}
+
+
+/* LOAD APPOINTMENTS */
 
 function fetchAppointments(){
 
 fetch(scriptURL+"?action=getAppointments")
 .then(r=>r.json())
-.then(rows=>{
+.then(data=>{
 
 appointmentsData=[];
 
-for(let i=1;i<rows.length;i++){
+for(let i=1;i<data.length;i++){
 
 appointmentsData.push({
 
-name:String(rows[i][0]||"").trim(),
-phone:String(rows[i][1]||"").trim(),
-doctor:rows[i][2],
-date:String(rows[i][5]||"").trim(),
-token:Number(rows[i][6])||0
+name:data[i][0],
+phone:data[i][1],
+date:data[i][5],
+token:Number(data[i][6])
 
 });
 
@@ -233,19 +305,22 @@ updateToken();
 }
 
 
+/* TOKEN LOGIC */
 
 function updateToken(){
 
-const selectedDate=dateSelect.value;
+const date=dateSelect.value;
 
 let maxToken=0;
 
 appointmentsData.forEach(a=>{
 
-if(a.date===selectedDate){
+if(a.date===date){
 
 if(a.token>maxToken){
+
 maxToken=a.token;
+
 }
 
 }
@@ -259,44 +334,39 @@ checkInputs();
 }
 
 
+/* INPUT CHECK */
+
+[userName,userPhone].forEach(el=>el.addEventListener("input",checkInputs));
 
 function checkInputs(){
 
-submitBtn.disabled=!(
-selectedDoctor &&
-dateSelect.value &&
-nameInput.value &&
-phoneInput.value
+bookBtn.disabled=!(
+userName.value &&
+userPhone.value &&
+selectedDoctor
 );
 
 }
 
 
+/* BOOK */
 
-dateSelect.onchange=updateToken;
-nameInput.oninput=checkInputs;
-phoneInput.oninput=checkInputs;
+bookBtn.onclick=()=>{
 
+const url=scriptURL+
+"?action=submitAppointment"+
+"&name="+encodeURIComponent(userName.value)+
+"&phone="+encodeURIComponent(userPhone.value)+
+"&doctor="+encodeURIComponent(selectedDoctor)+
+"&clinic=Clinic"+
+"&address=Clinic"+
+"&date="+encodeURIComponent(dateSelect.value);
 
+fetch(url)
+.then(r=>r.text())
+.then(token=>{
 
-submitBtn.onclick=()=>{
-
-const payload={
-
-name:nameInput.value,
-phone:phoneInput.value,
-doctor:selectedDoctor,
-date:dateSelect.value
-
-};
-
-fetch(scriptURL,{
-method:"POST",
-body:JSON.stringify(payload)
-})
-.then(()=>{
-
-alert("Appointment saved");
+alert("Appointment booked. Token: "+token);
 
 location.reload();
 
@@ -307,5 +377,4 @@ location.reload();
 </script>
 
 </body>
-
 </html>
