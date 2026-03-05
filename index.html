@@ -1,331 +1,352 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="UTF-8">
+
+<title>NKT Appointment</title>
 
 <style>
 
 body{
-font-family: Arial;
+font-family:Arial;
 margin:0;
-background:#f6f6f6;
+padding:0;
+background:#ffffff;
 }
 
 #topHeader{
-background:#8B0000;
+background:#d32f2f;
 color:white;
-padding:12px;
 text-align:center;
+font-size:20px;
+padding:12px;
 font-weight:bold;
 cursor:pointer;
 }
 
-#sanskrit{
-text-align:center;
-font-size:14px;
-margin-top:6px;
+#container{
+padding:16px;
 }
 
-.container{
-padding:15px;
-}
-
-label{
-display:block;
-margin-top:12px;
-font-weight:bold;
-}
-
-input,select{
+#doctorImage{
 width:100%;
-padding:10px;
-margin-top:5px;
-border-radius:6px;
-border:1px solid #ccc;
-font-size:16px;
+max-width:320px;
+display:none;
+margin:auto;
+margin-bottom:10px;
 }
 
-#doctors{
+.doctorButtons{
 display:flex;
+flex-direction:column;
 gap:10px;
-margin-top:15px;
-flex-wrap:wrap;
 }
 
-.docBtn{
-flex:1;
-min-width:120px;
-padding:14px;
-border-radius:8px;
+.doctorBtn{
+background:#f44336;
+color:white;
 border:none;
-background:#ddd;
-font-weight:bold;
+border-radius:6px;
+font-size:16px;
+padding:10px;
+width:100%;
+cursor:pointer;
 display:flex;
 align-items:center;
 justify-content:center;
-cursor:pointer;
 }
 
-.docBtn.selected{
-background:#8B0000;
-color:white;
-}
-
-#docImage{
+select,input{
 width:100%;
-margin-top:15px;
-display:none;
+padding:10px;
+margin-top:10px;
+font-size:15px;
+border-radius:6px;
+border:1px solid #ccc;
+box-sizing:border-box;
 }
 
-#token{
-margin-top:15px;
+#tokenBox{
+margin-top:14px;
+font-size:16px;
 font-weight:bold;
 }
 
 #bookBtn{
+margin-top:14px;
 width:100%;
-padding:14px;
-margin-top:20px;
-border:none;
-background:#ccc;
-color:white;
+padding:12px;
 font-size:16px;
-border-radius:8px;
+background:#f44336;
+color:white;
+border:none;
+border-radius:6px;
+cursor:pointer;
+opacity:.5;
 }
 
 #bookBtn.enabled{
-background:#8B0000;
-cursor:pointer;
+opacity:1;
 }
 
 </style>
+
 </head>
 
 <body>
 
-<div id="topHeader">NKT Clinic</div>
+<div id="topHeader">|| ॐ त्र्यम्बकं यजामहे सुगन्धिं पुष्टिवर्धनम् ||</div>
 
-<div id="sanskrit">
-धर्मो रक्षति रक्षितः
-</div>
+<div id="container">
 
-<div class="container">
+<img id="doctorImage">
 
-<div id="doctors"></div>
+<div class="doctorButtons" id="doctorButtons"></div>
 
-<img id="docImage">
+<select id="clinic"></select>
 
-<label>Name</label>
-<input id="name">
-
-<label>Phone</label>
-<input id="phone" maxlength="10" inputmode="numeric">
-
-<label>Address</label>
-<input id="address">
-
-<label>Date</label>
 <select id="date"></select>
 
-<div id="token">Token Available: --</div>
+<input id="name" placeholder="Name">
 
-<button id="bookBtn">Book Appointment</button>
+<input id="phone" placeholder="Phone">
+
+<input id="address" placeholder="Address">
+
+<div id="tokenBox">Token Available: </div>
+
+<button id="bookBtn" disabled>Book Appointment</button>
 
 </div>
+
+<input type="password" id="adminPass" style="position:absolute;left:-9999px">
 
 <script>
 
-const scriptURL="https://script.google.com/macros/s/AKfycby6hVR6u3QCODIrQ8lRybb4AusvejbUxaLPLs4rt8LiQs1YJKVvQ4LqvlwKTBshH-VjOA/exec"
+const SCRIPT_URL="https://script.google.com/macros/s/AKfycby6hVR6u3QCODIrQ8lRybb4AusvejbUxaLPLs4rt8LiQs1YJKVvQ4LqvlwKTBshH-VjOA/exec";
 
-let selectedDoctor=""
-let checking=false
+let settings=[];
+let appointments=[];
+let selectedDoctor="";
+let slotLimit=0;
 
-document.getElementById("phone").addEventListener("input",function(){
-this.value=this.value.replace(/\D/g,'').slice(0,10)
-checkForm()
-})
+async function init(){
 
-document.getElementById("name").addEventListener("input",checkForm)
-document.getElementById("address").addEventListener("input",checkForm)
+let res=await fetch(SCRIPT_URL+"?action=getData");
+let data=await res.json();
 
-document.getElementById("date").addEventListener("change",checkForm)
+settings=data.settings;
+appointments=data.appointments;
+
+loadDoctors();
+loadClinics();
+loadDates();
+
+checkToken();
+
+}
 
 function loadDoctors(){
 
-fetch(scriptURL+"?action=getSettings")
-.then(r=>r.json())
-.then(data=>{
+let div=document.getElementById("doctorButtons");
+div.innerHTML="";
 
-let doctors=data.doctors
-let container=document.getElementById("doctors")
+settings.forEach((r,i)=>{
 
-container.innerHTML=""
-
-doctors.forEach((d,i)=>{
-
-let btn=document.createElement("button")
-btn.className="docBtn"
-btn.innerText=d.name
+let btn=document.createElement("button");
+btn.className="doctorBtn";
+btn.innerText=r[0];
 
 btn.onclick=()=>{
-selectDoctor(d,btn)
+selectedDoctor=r[0];
+slotLimit=r[3];
+showDoctorImage(r[4]);
+checkToken();
+validateForm();
+};
+
+div.appendChild(btn);
+
+if(i===0){
+selectedDoctor=r[0];
+slotLimit=r[3];
+showDoctorImage(r[4]);
 }
 
-container.appendChild(btn)
+});
 
-if(i==0){
-btn.click()
 }
 
-})
+function showDoctorImage(url){
 
-})
-}
+let img=document.getElementById("doctorImage");
 
-function selectDoctor(doc,btn){
-
-selectedDoctor=doc.name
-
-document.querySelectorAll(".docBtn").forEach(b=>b.classList.remove("selected"))
-btn.classList.add("selected")
-
-if(doc.image){
-let img=document.getElementById("docImage")
-img.src=doc.image
-img.style.display="block"
+if(url){
+img.src=url;
+img.style.display="block";
 }else{
-document.getElementById("docImage").style.display="none"
+img.style.display="none";
 }
 
-loadDates()
-checkForm()
+}
+
+function loadClinics(){
+
+let sel=document.getElementById("clinic");
+sel.innerHTML="";
+
+let clinics=[...new Set(settings.map(r=>r[1]))];
+
+clinics.forEach(c=>{
+let op=document.createElement("option");
+op.value=c;
+op.text=c;
+sel.appendChild(op);
+});
+
 }
 
 function loadDates(){
 
-fetch(scriptURL+"?action=getDates&doctor="+selectedDoctor)
-.then(r=>r.json())
-.then(data=>{
+let sel=document.getElementById("date");
+sel.innerHTML="";
 
-let d=document.getElementById("date")
-d.innerHTML=""
+let dates=[...new Set(settings.map(r=>r[2]))];
 
-data.forEach((dt,i)=>{
-
-let opt=document.createElement("option")
-opt.value=dt
-opt.innerText=dt
-d.appendChild(opt)
-
-})
-
-d.selectedIndex=0
-
-updateToken()
-
-})
+dates.forEach(d=>{
+let op=document.createElement("option");
+op.value=d;
+op.text=d;
+sel.appendChild(op);
+});
 
 }
 
-function updateToken(){
+function validateForm(){
 
-let date=document.getElementById("date").value
+let name=document.getElementById("name").value.trim();
+let phone=document.getElementById("phone").value.trim();
+let address=document.getElementById("address").value.trim();
 
-fetch(scriptURL+"?action=getToken&doctor="+selectedDoctor+"&date="+date)
-.then(r=>r.text())
-.then(t=>{
-document.getElementById("token").innerText="Token Available: "+t
-})
+let btn=document.getElementById("bookBtn");
 
-}
-
-function checkForm(){
-
-if(checking) return
-
-let name=document.getElementById("name").value
-let phone=document.getElementById("phone").value
-let addr=document.getElementById("address").value
-
-let btn=document.getElementById("bookBtn")
-
-if(name && phone.length==10 && addr){
-
-btn.classList.add("enabled")
-btn.innerText="Book Appointment"
-
+if(name && phone.length===10 && address){
+btn.disabled=false;
+btn.classList.add("enabled");
 }else{
-
-btn.classList.remove("enabled")
-btn.innerText="Book Appointment"
-
+btn.disabled=true;
+btn.classList.remove("enabled");
 }
 
 }
 
-document.getElementById("bookBtn").onclick=function(){
+document.getElementById("phone").addEventListener("input",function(){
 
-let btn=this
+this.value=this.value.replace(/\D/g,"").slice(0,10);
 
-if(!btn.classList.contains("enabled")) return
+validateForm();
 
-checking=true
-btn.innerText="Checking Appointment..."
+});
 
-let data={
-name:document.getElementById("name").value,
-phone:document.getElementById("phone").value,
-address:document.getElementById("address").value,
-doctor:selectedDoctor,
-date:document.getElementById("date").value
-}
+document.getElementById("name").addEventListener("input",validateForm);
+document.getElementById("address").addEventListener("input",validateForm);
 
-fetch(scriptURL,{
-method:"POST",
-body:JSON.stringify(data)
-})
-.then(r=>r.text())
-.then(res=>{
+document.getElementById("clinic").addEventListener("change",checkToken);
+document.getElementById("date").addEventListener("change",checkToken);
 
-checking=false
+function checkToken(){
 
-if(res=="duplicate"){
+let clinic=document.getElementById("clinic").value;
+let date=document.getElementById("date").value;
 
-alert("Duplicate entry found")
+let max=0;
 
-btn.innerText="Book Appointment"
+appointments.forEach(r=>{
 
-}else{
+if(r[1]==selectedDoctor && r[2]==clinic && r[3]==date){
 
-alert("Appointment Booked")
-location.reload()
+let t=parseInt(r[4]);
+if(t>max)max=t;
 
 }
 
-})
+});
+
+let token=max+1;
+
+document.getElementById("tokenBox").innerText="Token Available: "+token;
+
+}
+
+document.getElementById("bookBtn").onclick=async function(){
+
+let btn=this;
+
+btn.innerText="Checking Appointment";
+btn.disabled=true;
+
+let name=document.getElementById("name").value;
+let phone=document.getElementById("phone").value;
+let address=document.getElementById("address").value;
+let clinic=document.getElementById("clinic").value;
+let date=document.getElementById("date").value;
+
+let res=await fetch(SCRIPT_URL+"?action=checkDuplicate&phone="+phone+"&date="+date);
+
+let data=await res.json();
+
+if(data.duplicate){
+
+alert("Duplicate Entry");
+
+btn.innerText="Book Appointment";
+validateForm();
+
+return;
+
+}
+
+await fetch(SCRIPT_URL+"?action=book&name="+name+"&phone="+phone+"&address="+address+"&doctor="+selectedDoctor+"&clinic="+clinic+"&date="+date);
+
+btn.innerText="Booked";
+
 }
 
 document.getElementById("topHeader").onclick=function(){
 
-let pass=prompt("Enter Password")
+let input=document.getElementById("adminPass");
 
-if(pass){
-
-fetch(scriptURL+"?action=checkPassword&pass="+pass)
-.then(r=>r.text())
-.then(res=>{
-
-if(res.startsWith("http")){
-window.location=res
-}
-
-})
+input.style.left="0";
+input.focus();
 
 }
 
+document.getElementById("adminPass").addEventListener("keydown",function(e){
+
+if(e.key==="Enter"){
+
+let pass=this.value;
+
+this.value="";
+this.style.left="-9999px";
+
+document.activeElement.blur();
+
+fetch(SCRIPT_URL+"?action=checkAdmin&pass="+pass)
+.then(r=>r.json())
+.then(d=>{
+
+if(d.ok){
+window.location="anktsngh48.github.io/nkt-edit-sheet";
 }
 
-loadDoctors()
+});
+
+}
+
+});
+
+init();
 
 </script>
 
