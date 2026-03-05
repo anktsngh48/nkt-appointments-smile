@@ -23,22 +23,29 @@ body{font-family:Segoe UI,sans-serif;margin:0;background:#f4f6f9;}
 .container{padding:20px;max-width:600px;margin:auto;}
 .card{background:white;padding:25px;border-radius:12px;box-shadow:0 6px 18px rgba(0,0,0,0.08);}
 label{font-weight:600;display:block;margin-top:15px;}
+
+/* Doctor */
 .doctorSection{display:flex;align-items:flex-start;gap:12px;margin-top:4px;}
 .doctorButtons{flex:1;display:flex;flex-wrap:wrap;gap:8px;align-content:flex-start;}
 .doctorButtons button{
   width:120px;height:60px;border:1px solid #007bff;background:white;
   border-radius:8px;cursor:pointer;display:flex;flex-direction:column;
-  justify-content:center;align-items:center;text-align:center;font-size:13px;line-height:1.3;
+  justify-content:center;align-items:center;text-align:center;
+  font-size:13px;line-height:1.3;
 }
 .doctorButtons button span{font-size:11px;}
 .doctorButtons button.selected{background:#007bff;color:white;}
 #doctorImage{width:100px;height:130px;object-fit:cover;border-radius:6px;display:none;}
+
+/* Clinic */
 .clinicButtons{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;}
 .clinicButtons button{
   border:1px solid #007bff;background:white;border-radius:6px;
   padding:8px 12px;font-size:13px;cursor:pointer;
 }
 .clinicButtons button.selected{background:#007bff;color:white;}
+
+/* Inputs */
 input,select{
   width:100%;padding:12px;margin-top:6px;border-radius:8px;
   border:1px solid #ddd;font-size:15px;box-sizing:border-box;
@@ -46,29 +53,55 @@ input,select{
 input.err{border-color:#dc3545;}
 .phone-hint{font-size:12px;color:#888;margin-top:3px;}
 .phone-hint.err{color:#dc3545;}
+
+/* Token display */
 .tokenInfo{
   margin-top:15px;font-weight:bold;text-align:center;
   font-size:16px;padding:10px;border-radius:8px;
 }
 .tokenInfo.avail{color:#007bff;background:#e8f0fe;}
 .tokenInfo.full{color:#dc3545;background:#fdecea;}
+
+/* Book button */
 #bookBtn{
   width:100%;padding:14px;margin-top:16px;border-radius:8px;
   border:none;background:#28a745;color:white;font-size:15px;
-  font-weight:600;cursor:pointer;
+  font-weight:600;cursor:pointer;transition:background .2s;
 }
-#bookBtn:disabled{background:#ccc;cursor:not-allowed;}
+#bookBtn:disabled{background:#aaa;cursor:not-allowed;}
 #bookBtn.chk{background:#f0a500;}
 #bookBtn.dup{background:#dc3545;}
 #bookBtn.noslot{background:#dc3545;}
 #bookBtn.done{background:#28a745;}
+
+/* Status message */
 #statusMsg{
   margin-top:10px;text-align:center;font-size:14px;
-  font-weight:600;min-height:20px;border-radius:6px;padding:6px 0;
+  font-weight:600;min-height:20px;border-radius:6px;padding:6px 4px;
 }
 #statusMsg.success{color:#28a745;}
 #statusMsg.err{color:#dc3545;}
 #statusMsg.warn{color:#e67e22;}
+#statusMsg.info{color:#007bff;}
+
+/* Confirmation receipt card */
+#receiptCard{
+  display:none;margin-top:16px;background:#f0fff4;
+  border:2px solid #28a745;border-radius:10px;padding:18px;
+  text-align:center;
+}
+#receiptCard h3{margin:0 0 12px;color:#28a745;font-size:17px;}
+#receiptCard table{width:100%;border-collapse:collapse;text-align:left;font-size:14px;}
+#receiptCard td{padding:5px 8px;}
+#receiptCard td:first-child{color:#555;font-weight:600;width:45%;}
+#receiptCard td:last-child{color:#222;}
+#downloadBtn{
+  margin-top:14px;padding:10px 24px;background:#007bff;color:white;
+  border:none;border-radius:8px;font-size:14px;font-weight:600;
+  cursor:pointer;
+}
+
+/* Hidden admin */
 .hiddenInput{
   opacity:0;position:fixed;top:-9999px;left:-9999px;
   height:1px;width:1px;pointer-events:none;
@@ -121,24 +154,33 @@ input.err{border-color:#dc3545;}
     <button id="bookBtn" type="button" disabled>Book Appointment</button>
     <div id="statusMsg"></div>
 
+    <!-- Confirmation receipt card (shown after booking) -->
+    <div id="receiptCard">
+      <h3>✓ Appointment Confirmed</h3>
+      <table id="receiptTable"></table>
+      <button id="downloadBtn" type="button">⬇ Download Booking Receipt</button>
+    </div>
+
   </div>
 </div>
 
 <script>
-// ── REPLACE WITH YOUR WEB APP URL ──────────────────────────────
+// ── PASTE YOUR WEB APP URL HERE ─────────────────────────────────
 const scriptURL = "https://script.google.com/macros/s/AKfycby6hVR6u3QCODIrQ8lRybb4AusvejbUxaLPLs4rt8LiQs1YJKVvQ4LqvlwKTBshH-VjOA/exec";
-// ──────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────
 
-let settingsData   = [];
-let selectedDoctor = "";
-let selectedClinic = "";
-let adminPassword  = "";
-let slotLimits     = {};
-// bookingState: idle | checking | ready | duplicate | full | booking | done
-let bookingState   = "idle";
-let checkTimer     = null;
-let slotsAvailable = true;   // set by refreshToken(); guards runCheck()
-let tokenChecking  = false;  // true while refreshToken() is in-flight
+let settingsData    = [];
+let selectedDoctor  = "";
+let selectedClinic  = "";
+let selectedClinicAddress = "";
+let adminPassword   = "";
+let slotLimits      = {};
+let bookingState    = "idle";
+// States: idle | checking | ready | duplicate | full | booking | done
+let checkTimer      = null;
+let slotsAvailable  = true;
+let tokenChecking   = false;
+let lastBooking     = null; // stores confirmed booking details for receipt
 
 const $doctor  = document.getElementById("doctorButtons");
 const $clinic  = document.getElementById("clinicButtons");
@@ -153,14 +195,16 @@ const $hdr     = document.getElementById("headerAddress");
 const $adm     = document.getElementById("adminInput");
 const $status  = document.getElementById("statusMsg");
 const $hint    = document.getElementById("phoneHint");
+const $receipt = document.getElementById("receiptCard");
+const $dlBtn   = document.getElementById("downloadBtn");
 
-// ── INIT ────────────────────────────────────────────────────────
+// ── INIT ─────────────────────────────────────────────────────────
 window.addEventListener("load", () => {
   setTimeout(() => { document.getElementById("preloader").style.display = "none"; }, 5000);
   loadSettings();
 });
 
-// ── SETTINGS ────────────────────────────────────────────────────
+// ── SETTINGS ─────────────────────────────────────────────────────
 async function loadSettings() {
   try {
     const r = await fetch(scriptURL + "?action=getSettings");
@@ -179,7 +223,7 @@ async function loadSettings() {
   }
 }
 
-// ── DATES ───────────────────────────────────────────────────────
+// ── DATES ────────────────────────────────────────────────────────
 function setupDates() {
   const d0 = new Date();
   const d1 = new Date(d0.getTime() + 86400000);
@@ -195,12 +239,12 @@ function fmt(d) {
          String(d.getMonth()+1).padStart(2,"0") + "-" + d.getFullYear();
 }
 
-// ── DOCTORS ─────────────────────────────────────────────────────
+// ── DOCTORS ──────────────────────────────────────────────────────
 function setupDoctors() {
-  settingsData.filter(r => r[0]==="Doctor").forEach((d, i) => {
+  settingsData.filter(r => r[0] === "Doctor").forEach((d, i) => {
     const b = document.createElement("button");
     b.type = "button";
-    b.innerHTML = d[1] + "<span>" + (d[4]||"") + "</span>";
+    b.innerHTML = d[1] + "<span>" + (d[4] || "") + "</span>";
     b.addEventListener("click", () => {
       selectedDoctor = d[1].trim();
       $img.src = d[2] || "";
@@ -214,15 +258,16 @@ function setupDoctors() {
   });
 }
 
-// ── CLINICS ─────────────────────────────────────────────────────
+// ── CLINICS ──────────────────────────────────────────────────────
 function setupClinics() {
-  settingsData.filter(r => r[0]==="Clinic").forEach((c, i) => {
+  settingsData.filter(r => r[0] === "Clinic").forEach((c, i) => {
     const b = document.createElement("button");
     b.type = "button";
     b.innerText = c[1];
     b.addEventListener("click", () => {
       selectedClinic = c[1].trim();
-      $hdr.innerText = c[2] || "";
+      selectedClinicAddress = (c[2] || "").trim();
+      $hdr.innerText = selectedClinicAddress;
       Array.from($clinic.children).forEach(x => x.classList.remove("selected"));
       b.classList.add("selected");
       onSelChange();
@@ -232,13 +277,13 @@ function setupClinics() {
   });
 }
 
-// ── PHONE: integers only, max 10 ────────────────────────────────
+// ── PHONE VALIDATION ─────────────────────────────────────────────
 $phone.addEventListener("keydown", e => {
-  const ok = ["Backspace","Delete","Tab","ArrowLeft","ArrowRight","Home","End"];
-  if (!ok.includes(e.key) && !/^\d$/.test(e.key)) e.preventDefault();
+  const allowed = ["Backspace","Delete","Tab","ArrowLeft","ArrowRight","Home","End"];
+  if (!allowed.includes(e.key) && !/^\d$/.test(e.key)) e.preventDefault();
 });
 $phone.addEventListener("input", () => {
-  $phone.value = $phone.value.replace(/\D/g,"").slice(0,10);
+  $phone.value = $phone.value.replace(/\D/g, "").slice(0, 10);
   const len = $phone.value.length;
   if (len === 0) {
     $hint.textContent = "Enter 10-digit number"; $hint.className = "phone-hint"; $phone.classList.remove("err");
@@ -254,24 +299,26 @@ $address.addEventListener("input", onFormInput);
 
 function phoneValid() { return /^\d{10}$/.test($phone.value); }
 
-// ── SELECTION CHANGE (doctor/clinic/date) ────────────────────────
+// ── SELECTION CHANGE ─────────────────────────────────────────────
 function onSelChange() {
-  // Never disturb a completed booking — message stays until refresh
-  if (bookingState === "done") return;
-  if (bookingState !== "booking") {
+  if (bookingState === "booking") return;
+  // Reset but keep "done" receipt visible — just re-check for new booking
+  if (bookingState !== "idle") {
     bookingState = "idle";
     clearStatus();
   }
-  refreshToken();
-  debounceCheck();
+  refreshToken(); // refreshToken calls debounceCheck() in its finally
 }
 
 // ── FORM INPUT ───────────────────────────────────────────────────
 function onFormInput() {
-  // Never disturb a completed booking — message stays until refresh
-  if (bookingState === "done") return;
-  if (bookingState === "duplicate") {
-    bookingState = "idle"; clearStatus();
+  if (bookingState === "booking") return;
+  // After a completed booking, editing fields means user wants another booking
+  // Reset to idle so duplicate/slot check runs fresh
+  if (bookingState === "done" || bookingState === "duplicate") {
+    bookingState = "idle";
+    clearStatus();
+    // Keep the receipt card visible — it's their record of the previous booking
   }
   debounceCheck();
 }
@@ -284,27 +331,16 @@ function debounceCheck() {
 
 // ── MAIN CHECK ───────────────────────────────────────────────────
 async function runCheck() {
-  if (bookingState === "booking" || bookingState === "done") return;
+  if (bookingState === "booking") return;
 
-  // Wait for token check to finish before proceeding
-  if (tokenChecking) {
-    debounceCheck();
-    return;
-  }
+  // Wait for token refresh to finish first
+  if (tokenChecking) { debounceCheck(); return; }
 
-  // Slots full — keep button disabled, nothing to check
-  if (!slotsAvailable) {
-    setState("full");
-    return;
-  }
+  if (!slotsAvailable) { setState("full"); return; }
 
   const allFilled = $name.value.trim() && phoneValid() && $address.value.trim();
-  if (!allFilled) {
-    setState("idle");
-    return;
-  }
+  if (!allFilled) { setState("idle"); return; }
 
-  // All fields filled → check duplicate
   setState("checking");
 
   try {
@@ -317,18 +353,19 @@ async function runCheck() {
       "&date="   + encodeURIComponent($date.value)
     );
     const d = await r.json();
-    // Re-check slots haven't gone full while we were waiting
+
     if (!slotsAvailable) { setState("full"); return; }
+
     if (d.duplicate) {
       setState("duplicate");
-      setStatus("An appointment already exists for this name & phone at this clinic on this date.", "warn");
+      setStatus("An appointment already exists for this name & phone at this clinic on the selected date.", "warn");
     } else {
       setState("ready");
       clearStatus();
     }
   } catch(e) {
     if (!slotsAvailable) { setState("full"); return; }
-    setState("ready");
+    setState("ready"); // fail open
   }
 }
 
@@ -347,35 +384,29 @@ async function refreshToken() {
       "&clinic=" + encodeURIComponent(selectedClinic) +
       "&date="   + encodeURIComponent($date.value)
     );
-    const d = await r.json();
+    const d      = await r.json();
     const maxTok = Number(d.maxToken) || 0;
     const next   = maxTok + 1;
     const limit  = slotLimits[selectedDoctor + "||" + selectedClinic] || 0;
 
     if (limit > 0 && maxTok >= limit) {
-      // Slots exhausted
-      slotsAvailable = false;
-      $token.textContent = "No Booking Available";
-      $token.className   = "tokenInfo full";
+      slotsAvailable         = false;
+      $token.textContent     = "No Booking Available";
+      $token.className       = "tokenInfo full";
       setStatus("All slots are full for this doctor, clinic & date.", "err");
       setState("full");
     } else {
-      // Slots available
-      slotsAvailable = true;
+      slotsAvailable     = true;
       $token.textContent = "Token Available: " + next;
       $token.className   = "tokenInfo avail";
-      if (bookingState === "full") {
-        bookingState = "idle";
-        clearStatus();
-      }
+      if (bookingState === "full") { bookingState = "idle"; clearStatus(); }
     }
   } catch(e) {
-    slotsAvailable = true; // fail open so user can still try
+    slotsAvailable = true;
     $token.textContent = "Token: —";
   } finally {
     tokenChecking = false;
-    // After token result is known, re-run the duplicate/button check
-    debounceCheck();
+    debounceCheck(); // now run the button check
   }
 }
 
@@ -384,38 +415,45 @@ $btn.addEventListener("click", async () => {
   if (bookingState !== "ready") return;
   setState("booking");
 
-  try {
-    const params = new URLSearchParams();
-    params.append("name",    $name.value.trim());
-    params.append("phone",   $phone.value.trim());
-    params.append("doctor",  selectedDoctor);
-    params.append("clinic",  selectedClinic);
-    params.append("address", $address.value.trim());
-    params.append("date",    $date.value);
+  const params = new URLSearchParams();
+  params.append("name",    $name.value.trim());
+  params.append("phone",   $phone.value.trim());
+  params.append("doctor",  selectedDoctor);
+  params.append("clinic",  selectedClinic);
+  params.append("address", $address.value.trim());
+  params.append("date",    $date.value);
 
-    const r = await fetch(scriptURL, {
-      method: "POST",
-      body:   params
-    });
+  try {
+    const r = await fetch(scriptURL, { method: "POST", body: params });
     const d = await r.json();
 
     if (d.status === "success") {
-      setState("done");
-      setStatus(
-        "✓ Appointment Booked! Token: " + d.token +
-        " | Doctor: " + selectedDoctor +
-        " | Clinic: " + selectedClinic +
-        " | Date: " + $date.value,
-        "success"
-      );
-      // Message stays until page is manually refreshed
+      // Save booking details for receipt
+      lastBooking = {
+        hospital:      "Smile Dental Hospital",
+        clinic:        selectedClinic,
+        clinicAddress: selectedClinicAddress,
+        doctor:        selectedDoctor,
+        name:          $name.value.trim(),
+        phone:         $phone.value.trim(),
+        address:       $address.value.trim(),
+        date:          $date.value,
+        token:         d.token,
+        timestamp:     new Date().toLocaleString("en-IN")
+      };
 
+      setState("done");
+      setStatus("✓ Appointment booked successfully!", "success");
+      showReceiptCard(lastBooking);
+      refreshToken(); // update token count
     } else if (d.status === "duplicate") {
       setState("duplicate");
-      setStatus("Duplicate appointment — this number is already booked for the selected doctor, clinic & date.", "warn");
+      setStatus("Duplicate appointment — this name & phone are already booked at this clinic on the selected date.", "warn");
     } else if (d.status === "full") {
+      slotsAvailable         = false;
+      $token.textContent     = "No Booking Available";
+      $token.className       = "tokenInfo full";
       setState("full");
-      $token.textContent = "No Booking Available"; $token.className = "tokenInfo full";
       setStatus("All slots are full for this doctor, clinic & date.", "err");
     } else {
       setState("ready");
@@ -427,47 +465,174 @@ $btn.addEventListener("click", async () => {
   }
 });
 
+// ── RECEIPT CARD ─────────────────────────────────────────────────
+function showReceiptCard(b) {
+  $receipt.style.display = "block";
+  const rows = [
+    ["Hospital",       b.hospital],
+    ["Clinic",         b.clinic],
+    ["Clinic Address", b.clinicAddress],
+    ["Doctor",         b.doctor],
+    ["Patient Name",   b.name],
+    ["Phone",          b.phone],
+    ["Address",        b.address],
+    ["Date",           b.date],
+    ["Token No.",      b.token],
+    ["Booked At",      b.timestamp]
+  ];
+  const tbl = document.getElementById("receiptTable");
+  tbl.innerHTML = rows.map(([k, v]) =>
+    `<tr><td>${k}</td><td>${v}</td></tr>`
+  ).join("");
+}
+
+// ── DOWNLOAD RECEIPT AS IMAGE ────────────────────────────────────
+$dlBtn.addEventListener("click", () => {
+  if (!lastBooking) return;
+  const b = lastBooking;
+
+  const W = 640, H = 620;
+  const canvas = document.createElement("canvas");
+  // 2x resolution for crisp image on retina screens
+  canvas.width  = W * 2;
+  canvas.height = H * 2;
+  canvas.style.width  = W + "px";
+  canvas.style.height = H + "px";
+  const ctx = canvas.getContext("2d");
+  ctx.scale(2, 2);
+
+  // ── Background ──
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, W, H);
+
+  // ── Blue header bar ──
+  ctx.fillStyle = "#007bff";
+  ctx.fillRect(0, 0, W, 90);
+
+  // ── Hospital name ──
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "bold 26px 'Segoe UI', Arial, sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText("Smile Dental Hospital", W / 2, 38);
+
+  // ── Clinic name in header ──
+  ctx.font = "15px 'Segoe UI', Arial, sans-serif";
+  ctx.fillText(b.clinic + (b.clinicAddress ? "  |  " + b.clinicAddress : ""), W / 2, 68);
+
+  // ── Green "Appointment Booked" badge ──
+  const badgeW = 260, badgeH = 38, badgeX = (W - badgeW) / 2, badgeY = 102;
+  ctx.fillStyle = "#28a745";
+  roundRect(ctx, badgeX, badgeY, badgeW, badgeH, 6);
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "bold 16px 'Segoe UI', Arial, sans-serif";
+  ctx.fillText("✓  APPOINTMENT BOOKED", W / 2, badgeY + 25);
+
+  // ── Token number ──
+  ctx.fillStyle = "#007bff";
+  ctx.font = "bold 52px 'Segoe UI', Arial, sans-serif";
+  ctx.fillText("Token  " + b.token, W / 2, 205);
+
+  // ── Divider ──
+  ctx.strokeStyle = "#e0e0e0";
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(40, 222); ctx.lineTo(W - 40, 222); ctx.stroke();
+
+  // ── Details rows ──
+  const details = [
+    ["Doctor",         b.doctor],
+    ["Patient Name",   b.name],
+    ["Phone",          b.phone],
+    ["Patient Address",b.address],
+    ["Date",           b.date],
+    ["Booked At",      b.timestamp],
+  ];
+
+  let y = 256;
+  details.forEach(([label, value]) => {
+    // Label
+    ctx.fillStyle = "#888888";
+    ctx.font = "13px 'Segoe UI', Arial, sans-serif";
+    ctx.textAlign = "left";
+    ctx.fillText(label, 52, y);
+    // Value
+    ctx.fillStyle = "#111111";
+    ctx.font = "bold 14px 'Segoe UI', Arial, sans-serif";
+    // Wrap long values
+    const maxW = W - 52 - 220;
+    const words = String(value).split(" ");
+    let line = "", lineY = y;
+    words.forEach(word => {
+      const test = line ? line + " " + word : word;
+      if (ctx.measureText(test).width > maxW && line) {
+        ctx.fillText(line, 220, lineY);
+        line = word; lineY += 20;
+      } else { line = test; }
+    });
+    ctx.fillText(line, 220, lineY);
+    y = Math.max(y + 38, lineY + 20);
+  });
+
+  // ── Footer ──
+  ctx.fillStyle = "#f4f6f9";
+  ctx.fillRect(0, H - 44, W, 44);
+  ctx.strokeStyle = "#e0e0e0";
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(0, H - 44); ctx.lineTo(W, H - 44); ctx.stroke();
+  ctx.fillStyle = "#888888";
+  ctx.font = "12px 'Segoe UI', Arial, sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText("Smile Dental Hospital — Please carry this receipt to your appointment", W / 2, H - 16);
+
+  // ── Trigger download ──
+  const link = document.createElement("a");
+  link.download = "Appointment_Token_" + b.token + "_" + b.date + ".png";
+  link.href = canvas.toDataURL("image/png");
+  link.click();
+});
+
+// Helper: draw filled rounded rectangle
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+  ctx.fill();
+}
+
 // ── STATE MACHINE ────────────────────────────────────────────────
 function setState(s) {
-  bookingState = s;
+  bookingState   = s;
   $btn.className = "";
   $btn.disabled  = true;
   switch(s) {
-    case "idle":
-      $btn.innerText = "Book Appointment"; break;
-    case "checking":
-      $btn.innerText = "Checking Appointment…"; $btn.classList.add("chk"); break;
-    case "ready":
-      $btn.innerText = "Book Appointment"; $btn.disabled = false; break;
-    case "duplicate":
-      $btn.innerText = "Duplicate Appointment"; $btn.classList.add("dup"); break;
-    case "full":
-      $btn.innerText = "No Slots Available"; $btn.classList.add("noslot"); break;
-    case "booking":
-      $btn.innerText = "Booking…"; $btn.classList.add("chk"); break;
-    case "done":
-      $btn.innerText = "✓ Appointment Booked"; $btn.classList.add("done"); break;
+    case "idle":     $btn.innerText = "Book Appointment"; break;
+    case "checking": $btn.innerText = "Checking Appointment…"; $btn.classList.add("chk"); break;
+    case "ready":    $btn.innerText = "Book Appointment"; $btn.disabled = false; break;
+    case "duplicate":$btn.innerText = "Duplicate Appointment"; $btn.classList.add("dup"); break;
+    case "full":     $btn.innerText = "No Slots Available"; $btn.classList.add("noslot"); break;
+    case "booking":  $btn.innerText = "Booking…"; $btn.classList.add("chk"); break;
+    case "done":     $btn.innerText = "✓ Appointment Booked"; $btn.classList.add("done"); break;
   }
 }
 
-// ── STATUS MSG ───────────────────────────────────────────────────
-function setStatus(msg, cls) {
-  $status.textContent = msg; $status.className = cls;
-}
-function clearStatus() {
-  $status.textContent = ""; $status.className = "";
-}
+// ── STATUS ───────────────────────────────────────────────────────
+function setStatus(msg, cls) { $status.textContent = msg; $status.className = cls; }
+function clearStatus() { $status.textContent = ""; $status.className = ""; }
 
 // ── ADMIN ────────────────────────────────────────────────────────
 document.getElementById("headerBar").addEventListener("click", () => {
-  $adm.value = "";
-  $adm.style.pointerEvents = "auto";
-  $adm.focus();
+  $adm.value = ""; $adm.style.pointerEvents = "auto"; $adm.focus();
 });
 $adm.addEventListener("input", () => {
-  if (adminPassword && $adm.value === adminPassword) {
+  if (adminPassword && $adm.value === adminPassword)
     window.location.href = "https://duckduckgo.com";
-  }
 });
 </script>
 </body>
