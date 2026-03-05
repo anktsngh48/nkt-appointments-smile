@@ -1,13 +1,12 @@
-```html
 <!DOCTYPE html>
 <html>
 <head>
+
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>Smile Dental Hospital</title>
 
 <style>
-
-/* PRELOADER */
 
 #preloader{
 position:fixed;
@@ -28,10 +27,7 @@ padding:20px;
 font-size:18px;
 font-weight:700;
 color:#007bff;
-line-height:1.4;
 }
-
-/* BODY */
 
 body{
 font-family:Segoe UI;
@@ -46,13 +42,13 @@ padding:18px;
 text-align:center;
 font-size:22px;
 font-weight:600;
+cursor:pointer;
 }
 
 .header span{
 display:block;
 font-size:14px;
 font-weight:400;
-margin-top:3px;
 }
 
 .container{
@@ -68,21 +64,15 @@ border-radius:12px;
 box-shadow:0 6px 18px rgba(0,0,0,0.08);
 }
 
-/* LABEL */
-
 label{
 font-weight:600;
 display:block;
 margin-top:15px;
 }
 
-/* DOCTOR SECTION */
-
 .doctorSection{
 display:flex;
-align-items:flex-start;
 gap:12px;
-margin-top:4px;
 }
 
 .doctorButtons{
@@ -99,22 +89,16 @@ border-radius:6px;
 padding:6px 8px;
 cursor:pointer;
 font-size:12px;
-color:black;
 text-align:left;
 }
 
 .doctorButtons button span{
 display:block;
 font-size:10px;
-color:#444;
 }
 
 .doctorButtons button.selected{
 background:#007bff;
-color:white;
-}
-
-.doctorButtons button.selected span{
 color:white;
 }
 
@@ -126,13 +110,10 @@ border-radius:6px;
 display:none;
 }
 
-/* CLINICS */
-
 .clinicButtons{
 display:flex;
 flex-wrap:wrap;
 gap:6px;
-margin-top:6px;
 }
 
 .clinicButtons button{
@@ -142,15 +123,12 @@ border-radius:6px;
 padding:8px 10px;
 font-size:13px;
 cursor:pointer;
-color:black;
 }
 
 .clinicButtons button.selected{
 background:#007bff;
 color:white;
 }
-
-/* INPUTS */
 
 input,select{
 width:100%;
@@ -159,10 +137,7 @@ margin-top:6px;
 border-radius:8px;
 border:1px solid #ddd;
 font-size:15px;
-box-sizing:border-box;
 }
-
-/* BUTTON */
 
 #bookBtn{
 width:100%;
@@ -180,8 +155,6 @@ cursor:pointer;
 background:#ccc;
 }
 
-/* TOKEN */
-
 .tokenInfo{
 margin-top:15px;
 font-weight:bold;
@@ -190,24 +163,23 @@ text-align:center;
 }
 
 </style>
+
 </head>
 
 <body>
 
 <div id="preloader">
 <p>
-नित्यमध्मान तां तांस्तु व्याधिभिश्च विवर्जितः।<br>
-रसैश्च दन्तमूलानां रूक्षैराचाम्य विक्रियाम्॥
+नित्यमध्मान तां तांस्तु व्याधिभिश्च विवर्जितः।
 </p>
 </div>
 
-<div class="header">
+<div class="header" id="headerBar">
 Smile Dental Hospital
 <span id="headerAddress"></span>
 </div>
 
 <div class="container">
-
 <div class="card">
 
 <label>Doctor</label>
@@ -221,6 +193,7 @@ Smile Dental Hospital
 </div>
 
 <label>Clinic</label>
+
 <div class="clinicButtons" id="clinicButtons"></div>
 
 <label>Name</label>
@@ -236,7 +209,7 @@ Smile Dental Hospital
 <select id="dateSelect"></select>
 
 <div class="tokenInfo" id="tokenAvailable">
-Token: 1
+Token: -
 </div>
 
 <button id="bookBtn" disabled>
@@ -248,14 +221,11 @@ Book Appointment
 
 <script>
 
-window.addEventListener("load",function(){
-setTimeout(()=>{document.getElementById("preloader").style.display="none"},3000);
-});
-
 const scriptURL="https://script.google.com/macros/s/AKfycby6hVR6u3QCODIrQ8lRybb4AusvejbUxaLPLs4rt8LiQs1YJKVvQ4LqvlwKTBshH-VjOA/exec";
 
 let settingsData=[];
-let appointmentsData=[];
+let adminPassword="";
+
 let selectedDoctor="";
 let selectedClinic="";
 let selectedClinicAddress="";
@@ -273,17 +243,32 @@ const tokenAvailable=document.getElementById("tokenAvailable");
 const bookBtn=document.getElementById("bookBtn");
 const headerAddress=document.getElementById("headerAddress");
 
-fetch(scriptURL+"?action=getSettings")
-.then(r=>r.json())
-.then(data=>{
-settingsData=data;
+window.onload=()=>{
+
+setTimeout(()=>{
+document.getElementById("preloader").style.display="none";
+},2000);
+
+loadSettings();
+
+};
+
+async function loadSettings(){
+
+const res=await fetch(scriptURL+"?action=getSettings");
+settingsData=await res.json();
+
+settingsData.forEach(r=>{
+if(r[0]==="AdminPassword"){
+adminPassword=r[1];
+}
+});
+
 setupDoctors();
 setupClinics();
 setupDates();
-fetchAppointments();
-});
 
-/* DOCTORS */
+}
 
 function setupDoctors(){
 
@@ -305,7 +290,7 @@ doctorImage.style.display=d[2]?"block":"none";
 Array.from(doctorButtons.children).forEach(b=>b.classList.remove("selected"));
 btn.classList.add("selected");
 
-checkInputs();
+updateToken();
 
 };
 
@@ -313,13 +298,7 @@ doctorButtons.appendChild(btn);
 
 });
 
-if(doctors.length){
-doctorButtons.children[0].click();
 }
-
-}
-
-/* CLINICS */
 
 function setupClinics(){
 
@@ -334,14 +313,14 @@ btn.innerText=c[1];
 btn.onclick=()=>{
 
 selectedClinic=c[1];
-selectedClinicAddress=c[2]||"";
+selectedClinicAddress=c[2];
 
 headerAddress.innerText=selectedClinicAddress;
 
 Array.from(clinicButtons.children).forEach(b=>b.classList.remove("selected"));
 btn.classList.add("selected");
 
-checkInputs();
+updateToken();
 
 };
 
@@ -349,29 +328,24 @@ clinicButtons.appendChild(btn);
 
 });
 
-if(clinics.length){
-clinicButtons.children[0].click();
 }
-
-}
-
-/* DATE */
 
 function setupDates(){
 
 const today=new Date();
 const tomorrow=new Date(today.getTime()+86400000);
 
-const dates=[
-{t:"Today",d:formatDate(today)},
-{t:"Tomorrow",d:formatDate(tomorrow)}
-];
+const dates=[today,tomorrow];
 
-dates.forEach(x=>{
+dates.forEach(d=>{
+
 const opt=document.createElement("option");
-opt.value=x.d;
-opt.text=x.t+" ("+x.d+")";
+
+opt.value=formatDate(d);
+opt.text=opt.value;
+
 dateSelect.appendChild(opt);
+
 });
 
 dateSelect.onchange=updateToken;
@@ -382,54 +356,21 @@ function formatDate(d){
 return String(d.getDate()).padStart(2,'0')+"-"+String(d.getMonth()+1).padStart(2,'0')+"-"+d.getFullYear();
 }
 
-/* APPOINTMENTS */
+async function updateToken(){
 
-function fetchAppointments(){
-
-fetch(scriptURL+"?action=getAppointments")
-.then(r=>r.json())
-.then(data=>{
-
-appointmentsData=[];
-
-for(let i=1;i<data.length;i++){
-
-appointmentsData.push({
-date:data[i][5],
-token:Number(data[i][6])
-});
-
-}
-
-updateToken();
-
-});
-
-}
-
-/* TOKEN */
-
-function updateToken(){
+if(!selectedDoctor || !selectedClinic) return;
 
 const date=dateSelect.value;
 
-let maxToken=0;
+const res=await fetch(scriptURL+"?action=getToken&doctor="+encodeURIComponent(selectedDoctor)+"&clinic="+encodeURIComponent(selectedClinic)+"&date="+date);
 
-appointmentsData.forEach(a=>{
-if(a.date===date){
-if(a.token>maxToken){
-maxToken=a.token;
-}
-}
-});
+const data=await res.json();
 
-tokenAvailable.innerText="Token: "+(maxToken+1);
+tokenAvailable.innerText="Token: "+data.token;
 
 checkInputs();
 
 }
-
-/* INPUT CHECK */
 
 [userName,userPhone,userAddress].forEach(el=>el.addEventListener("input",checkInputs));
 
@@ -445,25 +386,46 @@ selectedClinic
 
 }
 
-/* BOOK */
+bookBtn.onclick=async()=>{
 
-bookBtn.onclick=()=>{
+const payload={
+name:userName.value,
+phone:userPhone.value,
+doctor:selectedDoctor,
+clinic:selectedClinic,
+address:userAddress.value,
+date:dateSelect.value
+};
 
-const url=scriptURL+
-"?action=submitAppointment"+
-"&name="+encodeURIComponent(userName.value)+
-"&phone="+encodeURIComponent(userPhone.value)+
-"&doctor="+encodeURIComponent(selectedDoctor)+
-"&clinic="+encodeURIComponent(selectedClinic)+
-"&address="+encodeURIComponent(userAddress.value)+
-"&date="+encodeURIComponent(dateSelect.value);
-
-fetch(url)
-.then(r=>r.text())
-.then(token=>{
-alert("Appointment booked. Token: "+token);
-location.reload();
+const res=await fetch(scriptURL,{
+method:"POST",
+body:JSON.stringify(payload)
 });
+
+const data=await res.json();
+
+if(data.status==="duplicate"){
+alert("Duplicate Appointment");
+return;
+}
+
+if(data.status==="success"){
+alert("Appointment booked. Token: "+data.token);
+location.reload();
+return;
+}
+
+alert("Server Error");
+
+};
+
+document.getElementById("headerBar").onclick=()=>{
+
+const pass=prompt("Enter Admin Password");
+
+if(pass===adminPassword){
+window.location="https://duckduckgo.com";
+}
 
 };
 
@@ -471,4 +433,3 @@ location.reload();
 
 </body>
 </html>
-```
