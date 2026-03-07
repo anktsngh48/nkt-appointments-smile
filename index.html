@@ -246,6 +246,8 @@ async function loadSettings() {
       if (row[0] === "AdminPassword") adminPassword = String(row[1]);
       if (row[0] === "SlotLimit")
         slotLimits[row[1].trim() + "||" + row[2].trim()] = Number(row[3]) || 0;
+      if (row[0] === "Header" && row[1])
+        document.getElementById("headerBar").childNodes[0].textContent = String(row[1]).trim() + " ";
     });
     setupDates();
     setupDoctors();
