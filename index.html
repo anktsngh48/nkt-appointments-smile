@@ -439,7 +439,7 @@ async function refreshNowServing() {
       // Show the card
       $nsCard.style.display  = "block";
       $nsToken.textContent   = "Token: " + ns;
-      $nsSub.textContent     = ;
+      $nsSub.textContent     = selectedDoctor + " | " + selectedClinic;
     } else {
       // No "in" marked today — hide the card entirely
       $nsCard.style.display = "none";
