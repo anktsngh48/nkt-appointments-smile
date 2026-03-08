@@ -86,13 +86,41 @@ label{font-weight:600;display:block;margin-top:15px;}
 }
 .clinicButtons button.selected{background:#007bff;color:white;}
 
-input,select{
+input{
   width:100%;padding:12px;margin-top:6px;border-radius:8px;
   border:1px solid #ddd;font-size:15px;box-sizing:border-box;
 }
 input.err{border-color:#dc3545;}
 .phone-hint{font-size:12px;color:#888;margin-top:3px;}
 .phone-hint.err{color:#dc3545;}
+
+/* ── CUSTOM DATE DROPDOWN ─────────────────────────────────── */
+.custom-select{position:relative;width:100%;margin-top:6px;}
+.custom-select-trigger{
+  width:100%;padding:12px 40px 12px 12px;border-radius:8px;
+  border:1px solid #ddd;font-size:15px;box-sizing:border-box;
+  background:white;cursor:pointer;text-align:left;
+  display:flex;align-items:center;justify-content:space-between;
+  user-select:none;
+}
+.custom-select-trigger::after{
+  content:"▾";font-size:16px;color:#888;flex-shrink:0;margin-left:8px;
+}
+.custom-select-trigger.open{border-color:#007bff;border-radius:8px 8px 0 0;}
+.custom-select-options{
+  display:none;position:absolute;top:100%;left:0;right:0;
+  background:white;border:1px solid #007bff;border-top:none;
+  border-radius:0 0 8px 8px;z-index:999;
+  box-shadow:0 4px 12px rgba(0,0,0,0.12);
+}
+.custom-select-options.open{display:block;}
+.custom-select-option{
+  padding:12px;font-size:15px;cursor:pointer;
+  border-bottom:1px solid #f0f0f0;
+}
+.custom-select-option:last-child{border-bottom:none;}
+.custom-select-option:hover{background:#f0f7ff;}
+.custom-select-option.selected{background:#e8f0fe;color:#007bff;font-weight:600;}
 
 .tokenInfo{
   margin-top:15px;font-weight:bold;text-align:center;
@@ -186,7 +214,10 @@ input.err{border-color:#dc3545;}
     <input id="userAddress" type="text" placeholder="Your Address">
 
     <label>Date</label>
-    <select id="dateSelect"></select>
+    <div class="custom-select" id="dateWrapper">
+      <div class="custom-select-trigger" id="dateTrigger">Select a date</div>
+      <div class="custom-select-options" id="dateOptions"></div>
+    </div>
 
     <div class="tokenInfo avail" id="tokenDiv">Token Available: —</div>
 
@@ -222,7 +253,19 @@ const $img      = document.getElementById("doctorImage");
 const $name     = document.getElementById("userName");
 const $phone    = document.getElementById("userPhone");
 const $address  = document.getElementById("userAddress");
-const $date     = document.getElementById("dateSelect");
+// Custom date dropdown — mimics $date.value interface
+const $date = {
+  _value: "",
+  get value() { return this._value; },
+  set value(v) {
+    this._value = v;
+    document.getElementById("dateTrigger").textContent = v || "Select a date";
+    // Update selected highlight
+    document.querySelectorAll(".custom-select-option").forEach(o => {
+      o.classList.toggle("selected", o.dataset.value === v);
+    });
+  }
+};
 const $token    = document.getElementById("tokenDiv");
 const $btn      = document.getElementById("bookBtn");
 const $hdr      = document.getElementById("headerAddress");
@@ -274,7 +317,7 @@ const WEEKDAYS = ["sunday","monday","tuesday","wednesday","thursday","friday","s
 
 function isDateBlocked(d) {
   const dayName = WEEKDAYS[d.getDay()];
-  const docBlocked = doctorBlockedDays[selectedDoctor];
+  const docBlocked  = doctorBlockedDays[selectedDoctor];
   const clinBlocked = clinicBlockedDays[selectedClinic];
   if (docBlocked  && docBlocked.has(dayName))  return true;
   if (clinBlocked && clinBlocked.has(dayName)) return true;
@@ -282,38 +325,69 @@ function isDateBlocked(d) {
 }
 
 function setupDates() {
-  $date.addEventListener("change", onSelChange);
+  // Toggle open/close on trigger click
+  document.getElementById("dateTrigger").addEventListener("click", () => {
+    const trigger = document.getElementById("dateTrigger");
+    const options = document.getElementById("dateOptions");
+    const isOpen  = options.classList.contains("open");
+    trigger.classList.toggle("open", !isOpen);
+    options.classList.toggle("open", !isOpen);
+  });
+  // Close when clicking outside
+  document.addEventListener("click", e => {
+    if (!document.getElementById("dateWrapper").contains(e.target)) {
+      document.getElementById("dateTrigger").classList.remove("open");
+      document.getElementById("dateOptions").classList.remove("open");
+    }
+  });
   buildDateOptions();
 }
 
 function buildDateOptions() {
-  // Remember current value so we can restore if still valid
-  const prev = $date.value;
-  $date.innerHTML = "";
+  const prev    = $date.value;
+  const optWrap = document.getElementById("dateOptions");
+  optWrap.innerHTML = "";
 
-  // Offer today + next 6 days, skip blocked ones
+  // Build list: today + next 6 days, skip blocked, take first 2
   let added = 0;
+  const available = [];
   for (let i = 0; i <= 6 && added < 2; i++) {
     const d = new Date();
     d.setDate(d.getDate() + i);
     if (isDateBlocked(d)) continue;
-    const o = document.createElement("option");
-    o.value = o.text = dateFmt(d);
-    $date.appendChild(o);
+    available.push(dateFmt(d));
     added++;
   }
 
-  // If no dates available, show a placeholder
-  if ($date.options.length === 0) {
-    const o = document.createElement("option");
-    o.value = ""; o.text = "No dates available";
-    $date.appendChild(o);
+  if (available.length === 0) {
+    const div = document.createElement("div");
+    div.className = "custom-select-option";
+    div.textContent = "No dates available";
+    optWrap.appendChild(div);
+    $date.value = "";
     return;
   }
 
-  // Restore previous selection if still present
-  const opts = Array.from($date.options).map(o => o.value);
-  if (prev && opts.includes(prev)) $date.value = prev;
+  available.forEach(dateStr => {
+    const div = document.createElement("div");
+    div.className = "custom-select-option";
+    div.textContent = dateStr;
+    div.dataset.value = dateStr;
+    div.addEventListener("click", () => {
+      $date.value = dateStr;
+      document.getElementById("dateTrigger").classList.remove("open");
+      document.getElementById("dateOptions").classList.remove("open");
+      onSelChange();
+    });
+    optWrap.appendChild(div);
+  });
+
+  // Restore previous selection if still valid, else default to first
+  if (prev && available.includes(prev)) {
+    $date.value = prev;
+  } else {
+    $date.value = available[0];
+  }
 }
 
 function dateFmt(d) {
