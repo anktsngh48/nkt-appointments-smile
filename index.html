@@ -69,10 +69,11 @@ label{font-weight:600;display:block;margin-top:15px;}
 .doctorSection{display:flex;align-items:flex-start;gap:12px;margin-top:4px;}
 .doctorButtons{flex:1;display:flex;flex-wrap:wrap;gap:8px;align-content:flex-start;}
 .doctorButtons button{
-  width:120px;height:60px;border:1px solid #007bff;background:white;
+  width:150px;height:56px;border:1px solid #007bff;background:white;
   border-radius:8px;cursor:pointer;display:flex;flex-direction:column;
   justify-content:center;align-items:center;text-align:center;
-  font-size:13px;line-height:1.3;
+  font-size:12px;line-height:1.3;padding:4px 8px;
+  white-space:nowrap;overflow:hidden;
 }
 .doctorButtons button span{font-size:11px;}
 .doctorButtons button.selected{background:#007bff;color:white;}
@@ -207,6 +208,8 @@ let selectedClinic        = "";
 let selectedClinicAddress = "";
 let adminPassword         = "";
 let slotLimits            = {};
+let doctorBlockedDays     = {}; // key: doctor name → Set of blocked weekday names (lowercase)
+let clinicBlockedDays     = {}; // key: clinic name  → Set of blocked weekday names (lowercase)
 let bookingState          = "idle";
 let checkTimer            = null;
 let nsTimer               = null;
@@ -248,6 +251,15 @@ async function loadSettings() {
         slotLimits[row[1].trim() + "||" + row[2].trim()] = Number(row[3]) || 0;
       if (row[0] === "Header" && row[1])
         document.getElementById("headerBar").childNodes[0].textContent = String(row[1]).trim() + " ";
+      // Extra2 column (index 3) = comma-separated blocked weekdays e.g. "saturday,sunday"
+      if (row[0] === "Doctor" && row[3]) {
+        const days = String(row[3]).toLowerCase().split(",").map(d => d.trim()).filter(Boolean);
+        if (days.length) doctorBlockedDays[String(row[1]).trim()] = new Set(days);
+      }
+      if (row[0] === "Clinic" && row[3]) {
+        const days = String(row[3]).toLowerCase().split(",").map(d => d.trim()).filter(Boolean);
+        if (days.length) clinicBlockedDays[String(row[1]).trim()] = new Set(days);
+      }
     });
     setupDates();
     setupDoctors();
@@ -258,15 +270,52 @@ async function loadSettings() {
 }
 
 // ── DATES ────────────────────────────────────────────────────────
+const WEEKDAYS = ["sunday","monday","tuesday","wednesday","thursday","friday","saturday"];
+
+function isDateBlocked(d) {
+  const dayName = WEEKDAYS[d.getDay()];
+  const docBlocked = doctorBlockedDays[selectedDoctor];
+  const clinBlocked = clinicBlockedDays[selectedClinic];
+  if (docBlocked  && docBlocked.has(dayName))  return true;
+  if (clinBlocked && clinBlocked.has(dayName)) return true;
+  return false;
+}
+
 function setupDates() {
-  const d0 = new Date(), d1 = new Date(d0.getTime() + 86400000);
-  [d0, d1].forEach(d => {
+  $date.addEventListener("change", onSelChange);
+  buildDateOptions();
+}
+
+function buildDateOptions() {
+  // Remember current value so we can restore if still valid
+  const prev = $date.value;
+  $date.innerHTML = "";
+
+  // Offer today + next 6 days, skip blocked ones
+  let added = 0;
+  for (let i = 0; i <= 6 && added < 2; i++) {
+    const d = new Date();
+    d.setDate(d.getDate() + i);
+    if (isDateBlocked(d)) continue;
     const o = document.createElement("option");
     o.value = o.text = dateFmt(d);
     $date.appendChild(o);
-  });
-  $date.addEventListener("change", onSelChange);
+    added++;
+  }
+
+  // If no dates available, show a placeholder
+  if ($date.options.length === 0) {
+    const o = document.createElement("option");
+    o.value = ""; o.text = "No dates available";
+    $date.appendChild(o);
+    return;
+  }
+
+  // Restore previous selection if still present
+  const opts = Array.from($date.options).map(o => o.value);
+  if (prev && opts.includes(prev)) $date.value = prev;
 }
+
 function dateFmt(d) {
   return String(d.getDate()).padStart(2,"0") + "-" +
          String(d.getMonth()+1).padStart(2,"0") + "-" + d.getFullYear();
@@ -283,6 +332,7 @@ function setupDoctors() {
       $img.src = d[2] || ""; $img.style.display = d[2] ? "block" : "none";
       Array.from($doctor.children).forEach(x => x.classList.remove("selected"));
       b.classList.add("selected");
+      buildDateOptions(); // rebuild dates for new doctor's blocked days
       onSelChange();
     });
     $doctor.appendChild(b);
@@ -302,6 +352,7 @@ function setupClinics() {
       $hdr.innerText = selectedClinicAddress;
       Array.from($clinic.children).forEach(x => x.classList.remove("selected"));
       b.classList.add("selected");
+      buildDateOptions(); // rebuild dates for new clinic's blocked days
       onSelChange();
     });
     $clinic.appendChild(b);
@@ -439,7 +490,7 @@ async function refreshNowServing() {
       // Show the card
       $nsCard.style.display  = "block";
       $nsToken.textContent   = "Token: " + ns;
-      $nsSub.textContent     = selectedDoctor + " | " + selectedClinic;
+      $nsSub.textContent     = "";
     } else {
       // No "in" marked today — hide the card entirely
       $nsCard.style.display = "none";
@@ -615,7 +666,7 @@ document.getElementById("headerBar").addEventListener("click",()=>{
 });
 $adm.addEventListener("input",()=>{
   if(adminPassword&&$adm.value===adminPassword)
-    window.location.href="https://anktsngh48.github.io/nkt-edit-sheet/";
+    window.location.href="https://duckduckgo.com";
 });
 </script>
 </body>
